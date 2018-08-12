@@ -19,7 +19,10 @@
     "smart-angular": "./dist/run.js"
   },
   "homepage": "https://github.com/mayalust/smart-angular#readme",
-  "dependencies": {
+  "devDependencies": {
+    "angular": "^1.7.3",
+    "angular-router": "0.0.2",
+    "jquery": "^3.3.1",
     "js-beautify": "^1.7.5",
     "less": "^3.8.1",
     "less-loader": "^4.1.0",

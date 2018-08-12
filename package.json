@@ -1,0 +1,30 @@
+{
+  "name": "smart-angular",
+  "version": "1.0.0",
+  "description": "proudsmart smart-angular",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mayalust/smart-angular.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mayalust/smart-angular/issues"
+  },
+  "bin": {
+    "smart-angular": "./dist/run.js"
+  },
+  "homepage": "https://github.com/mayalust/smart-angular#readme",
+  "dependencies": {
+    "js-beautify": "^1.7.5",
+    "less": "^3.8.1",
+    "less-loader": "^4.1.0",
+    "loader-utils": "^1.1.0",
+    "proudsmart-template": "^1.0.21",
+    "webpack": "^4.16.3"
+  }
+}

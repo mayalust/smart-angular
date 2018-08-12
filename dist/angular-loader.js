@@ -2,6 +2,7 @@ const js_beautify = require('js-beautify').js_beautify,
   templateLib = require("proudsmart-template"),
   pathLib = require("path"),
   less = require("less"),
+  babel = require("babel-core"),
   CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split(''),
   loaderUtils = require("loader-utils");
 module.exports = function (source,map) {
@@ -54,7 +55,12 @@ module.exports = function (source,map) {
       "script" : {
         regexp : tagExpr("script"),
         handler : function(source, attr){
-          return source;
+          let options = {
+            presets : "es2015"
+          };
+          let codeObj = babel.transform(source, options);
+          console.log(codeObj.code);
+          return codeObj.code;
         }
       }
     },
@@ -140,12 +146,9 @@ module.exports = function (source,map) {
         console.error("json.children[0] is undefined");
         console.dir(json);
       }
-
       json.children[0].params = json.children[0].params || {};
       json.children[0].params["scoped-" + uid] = null;
     }
-    //cls = json.children[0].params.class;
-    //json.children[0].params = cls ? cls + " scoped-" + uid : "scoped-" + uid;
     s = templateLib.json2html(json, true);
     return replaceAllReture(s);
   }
@@ -280,7 +283,7 @@ module.exports = function (source,map) {
             config : config,\
             template : template,\
             style : style,\
-            " + type + " : module.exports\
+            " + type + " : module.exports || exports.default\
           }";
           res(fnStr);
         }).catch((e) => {
@@ -312,7 +315,7 @@ module.exports = function (source,map) {
           fnStr += "module.exports = {\
             name : \"" + alias + "\",\
             config : config,\
-            " + type + " : module.exports\
+            " + type + " : module.exports || exports.default\
           }";
           res(fnStr);
         }).catch((e) => {
@@ -346,7 +349,7 @@ module.exports = function (source,map) {
             config : config,\
             template : template,\
             style : style,\
-            " + type + " : module.exports\
+            " + type + " : module.exports || exports.default\
           }";
           res(fnStr);
         }).catch((e) => {

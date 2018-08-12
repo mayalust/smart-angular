@@ -7,8 +7,7 @@ const webpack = require("webpack"),
   _contain = ["controller", "directive", "service"],
   _templates = {},
   _deps = "./deps.js",
-  _workpath = "../../../",
-  _mainpath = pathLib.resolve(__dirname, _workpath),
+  _workpath = pathLib.resolve(process.cwd()),
   _Webpackconfig = {
     devtool : 'inline-source-map',
     mode : "development",
@@ -83,7 +82,7 @@ function extend(a, b){
   return a;
 }
 function runJs(code){
-  return eval(beautify("(function(__dirname){var module = {};" +  code + "return module.exports;})(\"" + _mainpath + "\")"))
+  return eval(beautify("(function(__dirname){var module = {};" +  code + "return module.exports;})(\"" + _workpath + "\")"))
 }
 function getConfig(name){
   let _config = beautify("const pathLib = require(\"path\");\n\
@@ -91,10 +90,10 @@ function getConfig(name){
       main : pathLib.resolve(\"./ps-" + name + "\")\n\
     }");
   return new Promise((res, rej) => {
-    fs.readFile(pathLib.join(_mainpath, "ps-" + name + ".config.js"), (err, d) => {
+    fs.readFile(pathLib.join(_workpath, "ps-" + name + ".config.js"), (err, d) => {
       if(err){
         err.errno == -2 && err.code == "ENOENT"
-          ? fs.writeFile(pathLib.join(_mainpath, "ps-" + name + ".config.js"), _config, (err) => {
+          ? fs.writeFile(pathLib.join(_workpath, "ps-" + name + ".config.js"), _config, (err) => {
             err ? (
               console.error("创建配置文件失败"),
                 rej(err)
@@ -185,7 +184,7 @@ function wepackRun(name){
         app : pathLib.join( __dirname, "./smart-angular.js" )
       },
       output: {
-        path: pathLib.join( __dirname, _workpath , "./ps-" + name),
+        path: pathLib.join( _workpath , "./ps-" + name),
         filename: 'output.js'
       }
     })
@@ -198,7 +197,7 @@ function wepackRun(name){
 }
 function initFolder(name){
   return new Promise(function(res, rej){
-    let p = pathLib.join( __dirname, _workpath , "./ps-" + name);
+    let p = pathLib.join( _workpath , "./ps-" + name);
     fs.mkdir(p, 0o777, function(err, d){
       err
         ? (err.message = err.code === "EEXIST"
@@ -211,7 +210,7 @@ function initFolder(name){
 function createContains(name){
   let proms = ["template"].concat(_contain).map(function(n){
     return new Promise(function(res, rej){
-      let p = pathLib.join( __dirname, _workpath , "./ps-" + name, "./" + n + "s");
+      let p = pathLib.join( _workpath , "./ps-" + name, "./" + n + "s");
       fs.mkdir(p, 0o777, function(err, d){
         err
           ? (err.message = err.code === "EEXIST"
@@ -233,7 +232,7 @@ function makeConfigFile(name){
   }).join("");
   str += "}";
   return new Promise(function(res, rej){
-    let p = pathLib.join( __dirname, _workpath , "./ps-" + name + ".config.js");
+    let p = pathLib.join( _workpath , "./ps-" + name + ".config.js");
     fs.writeFile(p, beautify(str), function(err){
       err
         ? (err.message = err.code === "EEXIST"
@@ -246,12 +245,14 @@ function makeConfigFile(name){
 module.exports = {
   run : function(name){
     getConfig(name).then(( config ) => {
-      _output = config.main || pathLib.resolve(_mainpath, "./ps-" + name + "/output.js");
+      _output = config.main || pathLib.resolve(_workpath, "./ps-" + name + "/output.js");
       return makeTemplates(config);
     }).then(( config ) => {
       return makeEntryFile(config);
     }).then(( entryFile ) => {
       return wepackRun(name);
+    }).then( (d) => {
+      console.log(`webpack打包文件成功。`);
     })
   },
   init : function(name){

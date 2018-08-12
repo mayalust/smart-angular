@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 const compiler = require("./compiler"),
-  developer = require("./developer")
-  _workpath = "../../../";
+  developer = require("./developer");
 let arguments = process.argv.slice(2),
   command = arguments[0] || "pack",
-  name = arguments[1] || "solution"
+  name = arguments[1] || "core";
 switch(command){
   case "pack":
     compiler.run(name);

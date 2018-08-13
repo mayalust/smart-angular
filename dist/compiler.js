@@ -108,16 +108,16 @@ function getConfig(name){
 function makeTemplates(config){
   let obj = {};
   let path = config["templates"],
-    t = Filetree(path)
+    t = Filetree(path);
   return new Promise((res, rej) => {
     t.on("start", (root) => {
       let paths = [];
-      each(root.children, function(nd){
+      each(root.children, (nd) => {
         nd.ext === ".template" ?
           paths.push(nd.abspath) : null;
       });
       obj["template"] = paths;
-      var promises = paths.map(function(p){
+      var promises = paths.map((p) =>{
         return new Promise((res, rej) => {
           fs.readFile(p, (err, d) => {
             let template = err ? console.error(err.message)
@@ -131,7 +131,7 @@ function makeTemplates(config){
           });
         });
       });
-      Promise.all(promises).then(function(d){
+      Promise.all(promises).then((d) => {
         res(config);
       })
     })
@@ -145,7 +145,7 @@ function makeEntryFile(config){
     return new Promise((res, rej) => {
       t.on("start", (root) => {
         let arr = [];
-        each(root.children, function(nd){
+        each(root.children, (nd) => {
           nd.ext === "." + n ?
             arr.push(nd.abspath) : null;
         });
@@ -196,9 +196,9 @@ function wepackRun(name){
   })
 }
 function initFolder(name){
-  return new Promise(function(res, rej){
+  return new Promise((res, rej) => {
     let p = pathLib.join( _workpath , "./ps-" + name);
-    fs.mkdir(p, 0o777, function(err, d){
+    fs.mkdir(p, 0o777, (err, d) => {
       err
         ? (err.message = err.code === "EEXIST"
         ? "[" + name + "]已经被创建，请重新选择初始化项目名"
@@ -208,10 +208,10 @@ function initFolder(name){
   })
 }
 function createContains(name){
-  let proms = ["template"].concat(_contain).map(function(n){
-    return new Promise(function(res, rej){
+  let proms = ["template"].concat(_contain).map((n) => {
+    return new Promise((res, rej) => {
       let p = pathLib.join( _workpath , "./ps-" + name, "./" + n + "s");
-      fs.mkdir(p, 0o777, function(err, d){
+      fs.mkdir(p, 0o777, (err, d) => {
         err
           ? (err.message = err.code === "EEXIST"
           ? "[" + name + "]已经被创建，请重新选择初始化项目名"
@@ -222,18 +222,60 @@ function createContains(name){
   });
   return Promise.all(proms);
 }
+function createContainedFiles(name){
+  let tempFiles = pathLib.join(__dirname, "./template"),
+    t = Filetree(tempFiles);
+  function recursive(node, callback){
+    callback && callback(node);
+    for(var i in node.children){
+      recursive(node.children[i], callback)
+    }
+  }
+  return new Promise((res, rej) => {
+    t.on("start", (root) => {
+      let paths = []
+      recursive(root, (node) => {
+        if(node !== root && node.basename != ".DS_Store"){
+          paths.push(new Promise((res, rej) => {
+            let repath = node.abspath.split(root.abspath)[1];
+            repath = pathLib.join(_workpath, "./ps-" + name, repath);
+            console.log(repath);
+            if(node.ext == ""){
+              fs.mkdir(repath, 0o777, (err) => {
+                err
+                  ? (rej(err)) : res("创建文件夹成功");
+              })
+            } else {
+              fs.readFile(node.abspath, (err, d) => {
+                if(err){
+                  rej(err);
+                } else {
+                  fs.writeFile(repath, d, (err) => {
+                    err
+                      ? (rej(err)) : res("创建文件成功");
+                  })
+                }
+              })
+            }
+          }));
+        }
+      });
+      return Promise.all(paths);
+    });
+  })
+}
 function makeConfigFile(name){
   var str = "const pathLib = require(\"path\");"
   str += "module.exports = {";
   str += "name : \"" + name + "\",";
   str += "output: pathLib.resolve(__dirname, \"./ps-" + name + "/output.js\"),";
-  str += ["template"].concat(_contain).map(function(n){
+  str += ["template"].concat(_contain).map((n) => {
     return n + "s : pathLib.resolve(__dirname, \"./ps-" + name + "/"+ n +"s\"),"
   }).join("");
   str += "}";
-  return new Promise(function(res, rej){
+  return new Promise((res, rej) => {
     let p = pathLib.join( _workpath , "./ps-" + name + ".config.js");
-    fs.writeFile(p, beautify(str), function(err){
+    fs.writeFile(p, beautify(str), (err) => {
       err
         ? (err.message = err.code === "EEXIST"
         ? "[" + name + "]已经被创建，请重新选择初始化项目名"
@@ -259,6 +301,8 @@ module.exports = {
     initFolder(name).then(function(d){
         return createContains(name);
       }).then(function(d){
+    }).then(function(d){
+      return createContainedFiles(name);
     }).then(function(d){
       return makeConfigFile(name);
     }).catch(function(e){

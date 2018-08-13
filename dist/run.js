@@ -12,7 +12,7 @@ switch(command){
     compiler.init(name);
     break
   case "dev":
-    developer();
+    developer.run(name);
     break;
   default :
     break;

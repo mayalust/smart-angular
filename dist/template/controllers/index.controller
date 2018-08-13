@@ -1,0 +1,29 @@
+<config route="index"
+        defaultRoute = "true"
+        injector="$scope,mySer"
+></config>
+<template>
+  <div>
+    <div>
+      <span>controller : </span><span>{{msg}}</span>
+    </div>
+    <my-dir></my-dir>
+    <div>
+      <span>service : </span><span>{{serMsg}}</span>
+    </div>
+  </div>
+</template>
+<script type="text/javascript">
+  export default function(scope, mySer){
+    scope.msg = `欢迎使用smart-angular!`;
+    scope.serMsg = mySer.message;
+  }
+</script>
+<style type="less" @scope>
+  span{
+    padding : 10px;
+    color : #333;
+    background-color : #eee;
+    border : 1px solid #ddd;
+  }
+</style>

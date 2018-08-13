@@ -5,7 +5,7 @@
     if(typeof window.define === "function"){
       window.define(factory);
     } else {
-      window.psCore = factory();
+      window.smartAngular = factory();
     }
   }
 })(this, function(){

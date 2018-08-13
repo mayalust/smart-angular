@@ -1,17 +1,32 @@
 const express = require("express"),
   pathLib = require("path"),
+  fs = require("fs"),
+  compiler = require("./compiler"),
   app = express();
 module.exports = {
   run : function(name){
+    function webpackAngular(req, res, next){
+      var regAng = /(.*)\.angular$/g, match = regAng.exec(req.url);
+      match ? compiler.run(name).then((d) => {
+        res.setHeader("Content-Type", "application/javascript; charset=UTF-8");
+        fs.readFile(pathLib.join(process.cwd(),match[1] + ".js"), function(err, d){
+          err
+            ? res.write(JSON.stringify(err))
+            : res.write(d);
+          res.end();
+        })
+      }) : next();
+    }
     app.set('views',pathLib.join(__dirname , 'views') );
     app.engine('.html', require('ejs').__express);
     app.set('view engine', 'html');
+    app.use(webpackAngular);
     app.get("/", (req, res) => {
       res.render("development", {
         angular : "/angular/angular.min.js",
         angularRouter : "/angular-route/angular-route.min.js",
         jquery : "/jquery/dist/jquery.min.js",
-        output : "/ps-" + name + "/output.js",
+        output : "/ps-" + name + "/output.angular",
         name : "ps_" + name
       });
       res.end();

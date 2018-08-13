@@ -59,7 +59,6 @@ module.exports = function (source,map) {
             presets : "es2015"
           };
           let codeObj = babel.transform(source, options);
-          console.log(codeObj.code);
           return codeObj.code;
         }
       }

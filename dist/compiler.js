@@ -56,6 +56,15 @@ const webpack = require("webpack"),
       ]
     }
   };
+function info(){
+  console.info.apply(console, arguments);
+}
+function log(){
+  console.log.apply(console, arguments);
+}
+function error(){
+  console.error.apply(console, arguments);
+}
 function each(arr, callback){
   if(arr){
     for(let i = 0; i < arr.length; i++){
@@ -97,7 +106,7 @@ function getConfig(name){
             err ? (
               console.error("创建配置文件失败"),
                 rej(err)
-            ) : res(str);
+            ) : (info("创建配置文件完成！"), res(str));
           }) : null;
       } else {
         res(runJs(d.toString()));
@@ -174,7 +183,7 @@ function makeEntryFile(config, name){
       fs.writeFile(pathLib.resolve(__dirname, _deps), str, (err) => {
         err
           ? console.error("无法创建打包文件")
-          : res(str);
+          : (info("配置依赖文件完成！"), res(str));
       })
     })
   });
@@ -205,7 +214,7 @@ function initFolder(name){
         ? (err.message = err.code === "EEXIST"
         ? "[" + name + "]已经被创建，请重新选择初始化项目名"
         : null, rej(err))
-        : res("创建成功");
+        : (info("webpack打包完成！"), res("创建成功"));
     })
   })
 }
@@ -218,7 +227,7 @@ function createContains(name){
           ? (err.message = err.code === "EEXIST"
           ? "[" + name + "]已经被创建，请重新选择初始化项目名"
           : null, rej(err))
-          : res("创建成功");
+          : (res("创建成功"));
       })
     })
   });
@@ -241,20 +250,14 @@ function createContainedFiles(name){
           paths.push(new Promise((res, rej) => {
             let repath = node.abspath.split(root.abspath)[1];
             repath = pathLib.join(_workpath, "./ps-" + name, repath);
-            console.log(repath);
-            if(node.ext == ""){
-              fs.mkdir(repath, 0o777, (err) => {
-                err
-                  ? (rej(err)) : res("创建文件夹成功");
-              })
-            } else {
+            if(node.ext !== ""){
               fs.readFile(node.abspath, (err, d) => {
                 if(err){
                   rej(err);
                 } else {
                   fs.writeFile(repath, d, (err) => {
                     err
-                      ? (rej(err)) : res("创建文件成功");
+                      ? rej(err) : res("创建文件成功");
                   })
                 }
               })
@@ -288,27 +291,23 @@ function makeConfigFile(name){
 }
 module.exports = {
   run : function(name){
-    getConfig(name).then(( config ) => {
+    return getConfig(name).then(( config ) => {
       _output = config.main || pathLib.resolve(_workpath, "./ps-" + name + "/output.js");
       return makeTemplates(config);
     }).then(( config ) => {
       return makeEntryFile(config, name);
     }).then(( entryFile ) => {
       return wepackRun(name);
-    }).then( (d) => {
-      console.log(`webpack打包文件成功。`);
     })
   },
   init : function(name){
-    initFolder(name).then(function(d){
+    return initFolder(name).then(function(d){
         return createContains(name);
       }).then(function(d){
     }).then(function(d){
       return createContainedFiles(name);
     }).then(function(d){
       return makeConfigFile(name);
-    }).catch(function(e){
-      console.error(e.message || e);
     })
   }
 }

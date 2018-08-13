@@ -48,7 +48,7 @@
     return a;
   }
   function str2Array(obj){
-    return isArray(obj) ? obj : [obj];
+    return isArray(obj) ? obj : ( obj ? [obj] : null);
   }
   function switch2Str(obj){
     if(typeof obj === " function"){
@@ -137,8 +137,9 @@
     }
   }
   function loadModule(callback){
-    var module = angular.module("solution", ['ngRoute']), combinedCss = "";
-    eachProp(deps, function(res, type){
+    console.log("ps_" + deps.name);
+    var module = angular.module("ps_" + deps.name, ['ngRoute']), combinedCss = "";
+    eachProp(deps["tools"], function(res, type){
       inject(module, type, res);
       combinedCss += addCss(res);
     });
@@ -146,15 +147,17 @@
     module.config([
       '$routeProvider', '$locationProvider',
       function($routeProvider, $locationProvider) {
-        var controllers = deps["controller"];
+        var controllers = deps["tools"]["controller"], defaultRouter;
         eachProp(controllers, function(ctrl, i){
+          defaultRouter = defaultRouter || (ctrl.config.defaultRouter ? ctrl.config.router : null)
           $routeProvider.when("/" + ctrl.config.router, {
             template : ctrl.template,
             controller: ctrl.config.name || ctrl.name
           })
         });
         $locationProvider.hashPrefix('');
-        $routeProvider.otherwise({redirectTo:'/'})
+        console.log("默认路由为:", defaultRouter);
+        $routeProvider.otherwise({redirectTo:'/' + ( defaultRouter ? defaultRouter : "")});
       }
     ]);
     callback(module);

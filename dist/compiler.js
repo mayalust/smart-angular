@@ -137,7 +137,7 @@ function makeTemplates(config){
     })
   })
 }
-function makeEntryFile(config){
+function makeEntryFile(config, name){
   let obj = {};
   return Promise.all(_contain.map((n) => {
     let path = config[n + "s"],
@@ -159,10 +159,12 @@ function makeEntryFile(config){
         return "require(\"" + n + "\");\n";
       }).join("") : "",
         str += "let deps = {};",
+        str += "deps[\"name\"] = \"" + name + "\"",
+        str += "deps[\"tools\"] = {}",
         eachProp(obj, (n, i) => {
-          str += "deps[\"" + i + "\"] = [];";
+          str += "deps[\"tools\"][\"" + i + "\"] = [];";
           str += n.map((p) => {
-            return "deps[\"" + i + "\"].push(require(\"" + p + "\"));";
+            return "deps[\"tools\"][\"" + i + "\"].push(require(\"" + p + "\"));";
           }).join("");
         }),
         str += "module.exports = deps;",
@@ -290,7 +292,7 @@ module.exports = {
       _output = config.main || pathLib.resolve(_workpath, "./ps-" + name + "/output.js");
       return makeTemplates(config);
     }).then(( config ) => {
-      return makeEntryFile(config);
+      return makeEntryFile(config, name);
     }).then(( entryFile ) => {
       return wepackRun(name);
     }).then( (d) => {

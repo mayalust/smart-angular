@@ -1,6 +1,10 @@
 let deps = {};
-deps["directive"] = [];
-deps["service"] = [];
-deps["controller"] = [];
-deps["controller"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/controllers/t.controller"));
+deps["name"] = "core"
+deps["tools"] = {}
+deps["tools"]["controller"] = [];
+deps["tools"]["controller"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/controllers/index.controller"));
+deps["tools"]["directive"] = [];
+deps["tools"]["directive"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/directives/my-dir.directive"));
+deps["tools"]["service"] = [];
+deps["tools"]["service"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/services/my-ser.service"));
 module.exports = deps;

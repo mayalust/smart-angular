@@ -283,7 +283,7 @@ module.exports = function (source,map) {
             config : config,\
             template : template,\
             style : style,\
-            " + type + " : module.exports || exports.default\
+            " + type + " : exports.default || module.exports\
           }";
           res(fnStr);
         }).catch((e) => {
@@ -315,7 +315,7 @@ module.exports = function (source,map) {
           fnStr += "module.exports = {\
             name : \"" + alias + "\",\
             config : config,\
-            " + type + " : module.exports || exports.default\
+            " + type + " : exports.default || module.exports\
           }";
           res(fnStr);
         }).catch((e) => {
@@ -349,7 +349,7 @@ module.exports = function (source,map) {
             config : config,\
             template : template,\
             style : style,\
-            " + type + " : module.exports || exports.default\
+            " + type + " : exports.default || module.exports\
           }";
           res(fnStr);
         }).catch((e) => {

@@ -1,14 +1,14 @@
-<config route="index"
-        defaultRoute = "true"
+<config router="index"
+        defaultRouter = "true"
         injector="$scope,mySer"
 ></config>
 <template>
   <div>
-    <div>
+    <div class="wrap">
       <span>controller : </span><span>{{msg}}</span>
     </div>
     <my-dir></my-dir>
-    <div>
+    <div class="wrap">
       <span>service : </span><span>{{serMsg}}</span>
     </div>
   </div>
@@ -20,7 +20,8 @@
   }
 </script>
 <style type="less" @scope>
-  span{
+  .wrap{
+    margin : 5px;
     padding : 10px;
     color : #333;
     background-color : #eee;

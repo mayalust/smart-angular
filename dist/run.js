@@ -6,7 +6,7 @@ let arguments = process.argv.slice(2),
   name = arguments[1] || "core";
 switch(command){
   case "pack":
-    compiler.run(name);
+    compiler.pack(name);
     break;
   case "init":
     compiler.init(name);

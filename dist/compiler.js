@@ -116,7 +116,9 @@ function getConfig(name){
 }
 function makeTemplates(config){
   let obj = {};
-  let path = config["templates"],
+  let pa = config["templates"],
+    path = typeof pa === "object" ? pa.path : pa,
+    exclude = typeof pa === "object" ? pa.exclude : null,
     t = Filetree(path);
   return new Promise((res, rej) => {
     t.on("start", (root) => {
@@ -126,7 +128,9 @@ function makeTemplates(config){
           paths.push(nd.abspath) : null;
       });
       obj["template"] = paths;
-      var promises = paths.map((p) =>{
+      var promises = paths.filter((p) =>{
+        return exclude ? !exclude.test(p) : true
+      }).map((p) =>{
         return new Promise((res, rej) => {
           fs.readFile(p, (err, d) => {
             let template = err ? console.error(err.message)
@@ -149,13 +153,18 @@ function makeTemplates(config){
 function makeEntryFile(config, name){
   let obj = {};
   return Promise.all(_contain.map((n) => {
-    let path = config[n + "s"],
+    let pa = config[n + "s"],
+      exclude = typeof pa === "object" ? pa.exclude : null,
+      path = typeof pa === "object" ? pa.path : pa,
       t = Filetree(path);
     return new Promise((res, rej) => {
       t.on("start", (root) => {
         let arr = [];
+        function check(str){
+          return exclude ? !exclude.test(str) : true;
+        }
         each(root.children, (nd) => {
-          nd.ext === "." + n ?
+          nd.ext === "." + n && check(nd.abspath)?
             arr.push(nd.abspath) : null;
         });
         res(arr);
@@ -214,7 +223,7 @@ function initFolder(name){
         ? (err.message = err.code === "EEXIST"
         ? "[" + name + "]已经被创建，请重新选择初始化项目名"
         : null, rej(err))
-        : (info("webpack打包完成！"), res("创建成功"));
+        : (res("创建成功"));
     })
   })
 }
@@ -234,6 +243,7 @@ function createContains(name){
   return Promise.all(proms);
 }
 function createContainedFiles(name){
+  info("开始复制模版")
   let tempFiles = pathLib.join(__dirname, "./template"),
     t = Filetree(tempFiles);
   function recursive(node, callback){
@@ -247,10 +257,10 @@ function createContainedFiles(name){
       let paths = []
       recursive(root, (node) => {
         if(node !== root && node.basename != ".DS_Store"){
-          paths.push(new Promise((res, rej) => {
-            let repath = node.abspath.split(root.abspath)[1];
-            repath = pathLib.join(_workpath, "./ps-" + name, repath);
-            if(node.ext !== ""){
+          if(node.ext !== ""){
+            paths.push(new Promise((res, rej) => {
+              let repath = node.abspath.split(root.abspath)[1];
+              repath = pathLib.join(_workpath, "./ps-" + name, repath);
               fs.readFile(node.abspath, (err, d) => {
                 if(err){
                   rej(err);
@@ -261,11 +271,15 @@ function createContainedFiles(name){
                   })
                 }
               })
-            }
-          }));
+            }));
+          }
         }
       });
-      return Promise.all(paths);
+      Promise.all(paths).then(function(d){
+        res(d)
+      }).catch(function(e){
+        rej(e);
+      });
     });
   })
 }
@@ -275,7 +289,7 @@ function makeConfigFile(name){
   str += "name : \"" + name + "\",";
   str += "output: pathLib.resolve(__dirname, \"./ps-" + name + "/output.js\"),";
   str += ["template"].concat(_contain).map((n) => {
-    return n + "s : pathLib.resolve(__dirname, \"./ps-" + name + "/"+ n +"s\"),"
+    return n + "s : { path : pathLib.resolve(__dirname, \"./ps-" + name + "/"+ n +"s\"), test : \/\\.test\/g },"
   }).join("");
   str += "}";
   return new Promise((res, rej) => {
@@ -290,24 +304,45 @@ function makeConfigFile(name){
   })
 }
 module.exports = {
-  run : function(name){
-    return getConfig(name).then(( config ) => {
-      _output = config.main || pathLib.resolve(_workpath, "./ps-" + name + "/output.js");
-      return makeTemplates(config);
-    }).then(( config ) => {
-      return makeEntryFile(config, name);
-    }).then(( entryFile ) => {
-      return wepackRun(name);
+  pack : function(name){
+    return new Promise(function(res, rej){
+      getConfig(name).then(( config ) => {
+        _output = config.main || pathLib.resolve(_workpath, "./ps-" + name + "/output.js");
+        return makeTemplates(config);
+      }).then(( config ) => {
+        info("1,压缩模版文件成功")
+        return makeEntryFile(config, name);
+      }).then(( entryFile ) => {
+        info("2,压缩控制器服务文件成功")
+        return wepackRun(name);
+      }).then(function(d){
+        info("3,Wepack打包完成");
+        res("Wepack打包完成");
+      }).catch(function(e){
+        error(e);
+        rej(e);
+      })
     })
+
   },
   init : function(name){
-    return initFolder(name).then(function(d){
+    return new Promise(function(res, rej){
+      initFolder(name).then(function(d){
+        info("1，创建项目文件夹完成")
         return createContains(name);
       }).then(function(d){
-    }).then(function(d){
-      return createContainedFiles(name);
-    }).then(function(d){
-      return makeConfigFile(name);
+        info("2，复制模版文件夹完成")
+        return createContainedFiles(name);
+      }).then(function(d){
+        info("3，复制模版文件完成")
+        return makeConfigFile(name);
+      }).then(function(d){
+        info("4，初始化过程完成！");
+        res("初始化完成")
+      }).catch(function(e){
+        error(e);
+        rej(e);
+      })
     })
   }
 }

@@ -5,7 +5,7 @@
 <template>
   <div>
     <div class="wrap">
-      <span>controller : </span><span>{{msg}}</span>
+      <span>controller : </span><span>{{mymsg}}</span>
     </div>
     <my-dir></my-dir>
     <div class="wrap">
@@ -15,7 +15,7 @@
 </template>
 <script type="text/javascript">
   export default function(scope, mySer){
-    scope.msg = `欢迎使用smart-angular!`;
+    scope.mymsg = `欢迎使用smart-angular!123`;
     scope.serMsg = mySer.message;
   }
 </script>

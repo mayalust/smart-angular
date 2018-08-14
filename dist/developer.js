@@ -7,7 +7,7 @@ module.exports = {
   run : function(name){
     function webpackAngular(req, res, next){
       var regAng = /(.*)\.angular$/g, match = regAng.exec(req.url);
-      match ? compiler.run(name).then((d) => {
+      match ? compiler.pack(name).then((d) => {
         res.setHeader("Content-Type", "application/javascript; charset=UTF-8");
         fs.readFile(pathLib.join(process.cwd(),match[1] + ".js"), function(err, d){
           err

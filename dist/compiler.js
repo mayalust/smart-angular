@@ -149,11 +149,12 @@ function makeTemplates(config){
           });
         });
       });
+      console.log("123");
       Promise.all(promises).then((d) => {
         res(config);
-      }).catch(e){
+      }).catch((e) => {
         rej(e);
-      }
+      })
     })
   })
 }

@@ -4,7 +4,7 @@ const webpack = require("webpack"),
   beautify = require('js-beautify').js_beautify,
   pathLib = require("path"),
   Filetree = require(pathLib.join(__dirname, "./filetree.js")),
-  _contain = ["controller", "directive", "service"],
+  _contain = ["controller", "directive", "service", "filter"],
   _templates = {},
   _deps = "./deps.js",
   _workpath = pathLib.resolve(process.cwd()),
@@ -49,6 +49,16 @@ const webpack = require("webpack"),
             loader : pathLib.resolve(__dirname, "./angular-loader.js"),
             options : {
               type : "service",
+              data : _templates
+            }
+          }
+        },
+        {
+          test: /\.filter/,
+          use: {
+            loader : pathLib.resolve(__dirname, "./angular-loader.js"),
+            options : {
+              type : "filter",
               data : _templates
             }
           }
@@ -167,6 +177,7 @@ function makeEntryFile(config, name){
       t = Filetree(path);
     return new Promise((res, rej) => {
       t.on("start", (root) => {
+        console.log(path);
         let arr = [];
         function check(str){
           return exclude ? !exclude.test(str) : true;

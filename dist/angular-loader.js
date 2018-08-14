@@ -367,7 +367,40 @@ module.exports = function (source,map) {
           rej(e);
         });
       });
-    }
+    },
+    "filter" : function(){
+      console.log("--filter---");
+      return new Promise(( res, rej ) => {
+        promises = mapObj(exprCtrl, ( exp ) => {
+          return new Promise(( res, rej ) => {
+            let match = exp["regexp"].exec(source),
+              val = exp["handler"](match ? match[2] : null, match ? getAttr(match[1] || null) : null);
+            if(val instanceof Promise){
+              val.then((d) => {
+                res(d);
+              }).catch((e) => {
+                rej(e)
+              })
+            } else {
+              res(val);
+            }
+          })
+        });
+        Promise.all(promises).then((arr) => {
+          let fnStr = "";
+          fnStr += arr.join("")
+          fnStr += "module.exports = {\
+            name : \"" + alias + "\",\
+            config : config,\
+            " + type + " : exports.default || module.exports\
+          }";
+          res(fnStr);
+        }).catch((e) => {
+          console.error(e);
+          rej(e);
+        });
+      });
+    },
   }
   renderString[type]().then(function(d){
       callback(null, js_beautify(d), map);

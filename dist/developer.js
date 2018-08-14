@@ -34,6 +34,6 @@ module.exports = {
     app.use(express.static(pathLib.resolve(__dirname, "../node_modules")));
     app.use(express.static(pathLib.resolve(process.cwd())));
     app.listen(9000);
-    console.info("请打开浏览器 http://localhocal:9000/ 来开启预览模式");
+    console.info("请打开浏览器 http://localhost:9000/ 来开启预览模式");
   }
 };

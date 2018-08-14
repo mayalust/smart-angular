@@ -258,8 +258,10 @@ module.exports = function (source,map) {
       })
     },
     "controller" : function(){
+      console.log("--controller---");
       return new Promise(( res, rej ) => {
         promises = mapObj(exprCtrl, ( exp ) => {
+          console.log(exp);
           return new Promise(( res, rej ) => {
             let match = exp["regexp"].exec(source),
               val = exp["handler"](match[2], getAttr(match[1] || null));
@@ -292,6 +294,7 @@ module.exports = function (source,map) {
       });
     },
     "service" : function(){
+      console.log("--service---");
       return new Promise(( res, rej ) => {
         promises = mapObj(exprCtrl, ( exp ) => {
           return new Promise(( res, rej ) => {
@@ -324,6 +327,7 @@ module.exports = function (source,map) {
       });
     },
     "directive" : function(){
+      console.log("--directive---");
       return new Promise(( res, rej ) => {
         promises = mapObj(exprCtrl, ( exp ) => {
           return new Promise(( res, rej ) => {

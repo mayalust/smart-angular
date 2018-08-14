@@ -1,6 +1,6 @@
 {
   "name": "smart-angular",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "proudsmart smart-angular",
   "main": "index.js",
   "scripts": {
@@ -19,7 +19,7 @@
     "smart-angular": "./dist/run.js"
   },
   "homepage": "https://github.com/mayalust/smart-angular#readme",
-  "devDependencies": {
+  "dependencies": {
     "angular": "^1.7.3",
     "angular-route": "^1.7.3",
     "angular-router": "0.0.2",

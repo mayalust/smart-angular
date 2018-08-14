@@ -90,16 +90,18 @@ function extend(a, b){
   }
   return a;
 }
-function runJs(code){
+/**
+function runJs(configpath){
   return eval(beautify("(function(__dirname){var module = {};" +  code + "return module.exports;})(\"" + _workpath + "\")"))
-}
+}*/
 function getConfig(name){
   let _config = beautify("const pathLib = require(\"path\");\n\
     module.exports = {\n\
       main : pathLib.resolve(\"./ps-" + name + "\")\n\
     }");
   return new Promise((res, rej) => {
-    fs.readFile(pathLib.join(_workpath, "ps-" + name + ".config.js"), (err, d) => {
+    let configpath = pathLib.join(_workpath, "ps-" + name + ".config.js");
+    fs.readFile(configpath, (err, d) => {
       if(err){
         err.errno == -2 && err.code == "ENOENT"
           ? fs.writeFile(pathLib.join(_workpath, "ps-" + name + ".config.js"), _config, (err) => {
@@ -108,10 +110,11 @@ function getConfig(name){
                 rej(err)
             ) : (
               info("创建配置文件完成！"),
-                res(str));
+                res(require(configpath));
+            )
           }) : null;
       } else {
-        res(runJs(d.toString()));
+        res(require(configpath));
       }
     })
   })
@@ -148,7 +151,9 @@ function makeTemplates(config){
       });
       Promise.all(promises).then((d) => {
         res(config);
-      })
+      }).catch(e){
+        rej(e);
+      }
     })
   })
 }
@@ -193,7 +198,7 @@ function makeEntryFile(config, name){
     return new Promise((res, rej) => {
       fs.writeFile(pathLib.resolve(__dirname, _deps), str, (err) => {
         err
-          ? console.error("无法创建打包文件")
+          ? (console.error("无法创建打包文件"),rej(err))
           : (info("配置依赖文件完成！"), res(str));
       })
     })
@@ -212,7 +217,7 @@ function wepackRun(name){
     })
     webpack(_Webpackconfig, (err) => {
       err
-        ? console.error("打包失败")
+        ? (console.error("打包失败"),rej(err))
         : res("success");
     })
   })
@@ -289,9 +294,9 @@ function makeConfigFile(name){
   var str = "const pathLib = require(\"path\");"
   str += "module.exports = {";
   str += "name : \"" + name + "\",";
-  str += "output: pathLib.resolve(__dirname, \"./ps-" + name + "/output.js\"),";
+  str += "output: pathLib.resolve(__filename, \"./ps-" + name + "/output.js\"),";
   str += ["template"].concat(_contain).map((n) => {
-    return n + "s : { path : pathLib.resolve(__dirname, \"./ps-" + name + "/"+ n +"s\"), test : \/\\.test\/g },"
+    return n + "s : { path : pathLib.resolve(__filename, \"./ps-" + name + "/"+ n +"s\"), test : \/\\.test\/g },"
   }).join("");
   str += "}";
   return new Promise((res, rej) => {

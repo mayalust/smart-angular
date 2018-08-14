@@ -261,7 +261,7 @@ module.exports = function (source,map) {
       console.log("--controller---");
       return new Promise(( res, rej ) => {
         promises = mapObj(exprCtrl, ( exp ) => {
-          console.log(exp);
+          //console.log(exp);
           return new Promise(( res, rej ) => {
             let match = exp["regexp"].exec(source),
               val = exp["handler"](match[2], getAttr(match[1] || null));

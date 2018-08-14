@@ -56,7 +56,7 @@ module.exports = function (source,map) {
         regexp : tagExpr("script"),
         handler : function(source, attr){
           let options = {
-            presets : "es2089"
+            presets : "es2015"
           };
           try {
             let codeObj = babel.transform(source, options);

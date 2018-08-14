@@ -1,6 +1,6 @@
 {
   "name": "smart-angular",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "description": "proudsmart smart-angular",
   "main": "index.js",
   "scripts": {
@@ -22,7 +22,6 @@
   "dependencies": {
     "angular": "^1.7.3",
     "angular-route": "^1.7.3",
-    "angular-router": "0.0.2",
     "babel-core": "^6.26.3",
     "ejs": "^2.6.1",
     "express": "^4.16.3",

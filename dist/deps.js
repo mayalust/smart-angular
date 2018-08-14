@@ -1,4 +1,4 @@
-let deps = {};
+var deps = {};
 deps["name"] = "core"
 deps["tools"] = {}
 deps["tools"]["controller"] = [];

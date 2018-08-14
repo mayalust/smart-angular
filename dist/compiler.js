@@ -184,13 +184,13 @@ function makeEntryFile(config, name){
       str = config.dependencies ? config.dependencies.map((n) => {
         return "require(\"" + n + "\");\n";
       }).join("") : "",
-        str += "let deps = {};",
+        str += "var deps = {};",
         str += "deps[\"name\"] = \"" + name + "\"",
         str += "deps[\"tools\"] = {}",
         eachProp(obj, (n, i) => {
           str += "deps[\"tools\"][\"" + i + "\"] = [];";
           str += n.map((p) => {
-            return "deps[\"tools\"][\"" + i + "\"].push(require(\"" + p + "\"));";
+            return "deps[\"tools\"][\"" + i + "\"].push(require(\"" + normalize(p) + "\"));";
           }).join("");
         }),
         str += "module.exports = deps;",
@@ -204,6 +204,13 @@ function makeEntryFile(config, name){
       })
     })
   });
+}
+function normalize(path){
+  var rs = "";
+  each(path, function(n){
+    rs += n === "\\" ? "\/" : n
+  })
+  return rs;
 }
 function wepackRun(name){
   return new Promise((res, rej) => {

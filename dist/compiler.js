@@ -106,7 +106,9 @@ function getConfig(name){
             err ? (
               console.error("创建配置文件失败"),
                 rej(err)
-            ) : (info("创建配置文件完成！"), res(str));
+            ) : (
+              info("创建配置文件完成！"),
+                res(str));
           }) : null;
       } else {
         res(runJs(d.toString()));
@@ -307,16 +309,16 @@ module.exports = {
   pack : function(name){
     return new Promise(function(res, rej){
       getConfig(name).then(( config ) => {
-        _output = config.main || pathLib.resolve(_workpath, "./ps-" + name + "/output.js");
+        info("1,配置文件获取完成")
         return makeTemplates(config);
       }).then(( config ) => {
-        info("1,压缩模版文件成功")
+        info("2,压缩模版文件成功")
         return makeEntryFile(config, name);
       }).then(( entryFile ) => {
-        info("2,压缩控制器服务文件成功")
+        info("3,压缩控制器服务文件成功")
         return wepackRun(name);
       }).then(function(d){
-        info("3,Wepack打包完成");
+        info("4,Wepack打包完成");
         res("Wepack打包完成");
       }).catch(function(e){
         error(e);

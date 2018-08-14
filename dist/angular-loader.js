@@ -56,10 +56,17 @@ module.exports = function (source,map) {
         regexp : tagExpr("script"),
         handler : function(source, attr){
           let options = {
-            presets : "es2015"
+            presets : "es2089"
           };
-          let codeObj = babel.transform(source, options);
-          return codeObj.code;
+          try {
+            let codeObj = babel.transform(source, options);
+            console.log(codeObj.code);
+            return codeObj.code;
+          } catch(e){
+            var msg = "请先安装组件 npm install --save-dev babel-preset-es2015";
+            console.error("js无法被解析，原因：缺少解析模块，请先安装 npm install --save-dev babel-preset-es2015");
+            return "throw new Error(\"" + msg + "\");";
+          }
         }
       }
     },

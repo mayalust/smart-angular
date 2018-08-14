@@ -110,7 +110,7 @@ function getConfig(name){
                 rej(err)
             ) : (
               info("创建配置文件完成！"),
-                res(require(configpath));
+                res(require(configpath))
             )
           }) : null;
       } else {

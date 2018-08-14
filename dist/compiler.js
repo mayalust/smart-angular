@@ -293,11 +293,12 @@ function createContainedFiles(name){
 }
 function makeConfigFile(name){
   var str = "const pathLib = require(\"path\");"
+  str += "let match = \/(.*)\\\/.*$\/g.exec(__filename);"
   str += "module.exports = {";
   str += "name : \"" + name + "\",";
   str += "output: pathLib.resolve(__filename, \"./ps-" + name + "/output.js\"),";
   str += ["template"].concat(_contain).map((n) => {
-    return n + "s : { path : pathLib.resolve(__filename, \"./ps-" + name + "/"+ n +"s\"), test : \/\\.test\/g },"
+    return n + "s : { path : pathLib.resolve(match[1], \"./ps-" + name + "/"+ n +"s\"), test : \/\\.test\/g },"
   }).join("");
   str += "}";
   return new Promise((res, rej) => {

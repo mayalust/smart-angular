@@ -26,6 +26,8 @@ module.exports = {
         angular : "/angular/angular.min.js",
         angularRouter : "/angular-route/angular-route.min.js",
         jquery : "/jquery/dist/jquery.min.js",
+        bootstrap : "/bootstrap/dist/css/bootstrap.css",
+        dataTable : "/datatables.net-bs/css/dataTables.bootstrap.min.css",
         output : "/ps-" + name + "/output.angular",
         name : "ps_" + name
       });

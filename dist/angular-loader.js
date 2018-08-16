@@ -60,7 +60,6 @@ module.exports = function (source,map) {
           };
           try {
             let codeObj = babel.transform(source, options);
-            console.log(codeObj.code);
             return codeObj.code;
           } catch(e){
             var msg = "请先安装组件 npm install --save-dev babel-preset-es2015";
@@ -265,10 +264,8 @@ module.exports = function (source,map) {
       })
     },
     "controller" : function(){
-      console.log("--controller---");
       return new Promise(( res, rej ) => {
         promises = mapObj(exprCtrl, ( exp ) => {
-          //console.log(exp);
           return new Promise(( res, rej ) => {
             let match = exp["regexp"].exec(source),
               val = exp["handler"](match[2], getAttr(match[1] || null));
@@ -301,7 +298,6 @@ module.exports = function (source,map) {
       });
     },
     "service" : function(){
-      console.log("--service---");
       return new Promise(( res, rej ) => {
         promises = mapObj(exprCtrl, ( exp ) => {
           return new Promise(( res, rej ) => {
@@ -334,7 +330,6 @@ module.exports = function (source,map) {
       });
     },
     "directive" : function(){
-      console.log("--directive---");
       return new Promise(( res, rej ) => {
         promises = mapObj(exprCtrl, ( exp ) => {
           return new Promise(( res, rej ) => {
@@ -369,7 +364,6 @@ module.exports = function (source,map) {
       });
     },
     "filter" : function(){
-      console.log("--filter---");
       return new Promise(( res, rej ) => {
         promises = mapObj(exprCtrl, ( exp ) => {
           return new Promise(( res, rej ) => {
@@ -402,9 +396,10 @@ module.exports = function (source,map) {
       });
     },
   }
-  renderString[type]().then(function(d){
+  renderString[type]().then( (d) => {
       callback(null, js_beautify(d), map);
-    }).catch(function(e){
+    }).catch((e) => {
     console.error(e);
   });
+  return;
 }

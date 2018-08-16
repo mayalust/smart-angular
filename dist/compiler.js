@@ -159,7 +159,6 @@ function makeTemplates(config){
           });
         });
       });
-      console.log("123");
       Promise.all(promises).then((d) => {
         res(config);
       }).catch((e) => {
@@ -177,7 +176,6 @@ function makeEntryFile(config, name){
       t = Filetree(path);
     return new Promise((res, rej) => {
       t.on("start", (root) => {
-        console.log(path);
         let arr = [];
         function check(str){
           return exclude ? !exclude.test(str) : true;
@@ -211,7 +209,7 @@ function makeEntryFile(config, name){
       fs.writeFile(pathLib.resolve(__dirname, _deps), str, (err) => {
         err
           ? (console.error("无法创建打包文件"),rej(err))
-          : (info("配置依赖文件完成！"), res(str));
+          : res(str);
       })
     })
   });

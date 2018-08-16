@@ -1,6 +1,6 @@
 {
   "name": "smart-angular",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "description": "proudsmart smart-angular",
   "main": "index.js",
   "scripts": {
@@ -23,6 +23,9 @@
     "angular": "^1.7.3",
     "angular-route": "^1.7.3",
     "babel-core": "^6.26.3",
+    "bootstrap": "^4.1.3",
+    "datatables": "^1.10.18",
+    "datatables.net-bs": "^1.10.19",
     "ejs": "^2.6.1",
     "express": "^4.16.3",
     "jquery": "^3.3.1",
@@ -30,7 +33,7 @@
     "less": "^3.8.1",
     "less-loader": "^4.1.0",
     "loader-utils": "^1.1.0",
-    "proudsmart-template": "^1.0.21",
+    "proudsmart-template": "^1.0.23",
     "webpack": "^4.16.3"
   }
 }

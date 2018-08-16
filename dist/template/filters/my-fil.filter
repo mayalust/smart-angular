@@ -3,7 +3,7 @@
 <script type="text/javascript">
   export default function(location){
     var factory = {
-      message : "service使用范例"
+      message : "filter使用范例"
     }
     return factory;
   }

@@ -330,7 +330,7 @@ function makeConfigFile(name){
   str += "name : \"" + name + "\",";
   str += "output: pathLib.resolve(__filename, \"./ps-" + name + "/output.js\"),";
   str += ["template"].concat(_contain).map((n) => {
-    return n + "s : { path : pathLib.resolve(filepath, \"./ps-" + name + "/"+ n +"s\"), test : \/\\.test\/g },"
+    return n + "s : { path : pathLib.resolve(filepath, \"./ps-" + name + "/"+ n +"s\"), exclude : \/\\.test\/g },"
   }).join("");
   str += "}";
   return new Promise((res, rej) => {

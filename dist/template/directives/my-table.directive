@@ -1,0 +1,685 @@
+<config injector="$q, $timeout, $location"
+></config>
+<template>
+  <div>
+    <div class="angular-dataTable mobile-suitable">
+      <div class="angular-dataTable-header" ng-if="source.showheader != false" style="margin : 0px auto 5px auto">
+    <span ng-repeat="head in dataTable.buttons">
+            <button ng-disabled = "head.dtdisabled(dataTable.data)"
+                    class = "btn"
+                    ng-click="buttonClick(head, row);$event.stopPropagation();" type="button" ng-class="buttonClass(head)">
+              <i ng-class="head.icon"></i>
+              <span ng-class="hidden-sm" ng-bind="getButtonLabel(head)"></span>
+    </button>
+    <span ng-if="head.type=='multiSelect'" data-id="head.id" data-mark="head.mark" data-submit="head.events.submit(data)" data-options="head.options" multi-select>
+            </span>
+    </span>
+        <div class="combined-query pull-right" ng-show = "paymentRecords">
+          <div class="btn-group" ng-class="{true:'open', false:''}[open]" style="display:block; float:left; margin-top : 0;">
+            <button type="button" ng-disabled="wholeDisabled" class="btn btn-default btn-sm dropdown-toggle" ng-click="searchTypeClick();">
+              <span ng-bind="{true:'查询条件',false:getlabel(querytype)}[querytype==undefined]"></span><span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+              <li>
+                <a role="button" ng-click="conditionClick(header, key);" ng-repeat="(key, header) in dataTable.body" ng-bind="getlabel(header)">
+                </a>
+              </li>
+            </ul>
+          </div>
+          <span ng-if="querytype.search=='text' || querytype.search == undefined" style="display:block; float:left; margin : 0 6px;">
+                 <input class="form-control input-sm"
+                        ng-model="$parent.$parent.keyinput"
+                        maxlength="40" type="text" />
+            </span>
+          <span ng-if="querytype.search=='select'" style="display:block; float:left; margin : 0 6px;">
+                 <select ng-model="$parent.$parent.keyinput"
+                         class="form-control"
+                         style="padding-top: 2px;"
+                         ng-options="item[querytype.filterFormat.value]
+                          as item[querytype.filterFormat.label]
+                          for item in querytype.options"><option value="">请选择...</option></select>
+            </span>
+          <span ng-if="querytype.type=='selectObj'" style="display:block; float:left; margin : 0 6px;">
+                 <select ng-model="$parent.$parent.keyinput"
+                         class="form-control"
+                         style="padding-top: 2px;"
+                         ng-options="item[querytype.filterFormat.label] for item in querytype.options"><option value="">请选择...</option></select>
+            </span>
+          <span ng-if="querytype.type=='tree'" style="display:block; float:left; margin : 0 10px;">
+                <div class="dropdowntree select-sm"
+                     placeholder="请选择..."
+                     showclear="true"
+                     ng-model="$parent.$parent.keyinput"
+                     dt-key="querytype.key"
+                     options="querytype.options"
+                     dt-mark="querytype.mark"></div>
+            </span>
+          <span ng-if="querytype.type=='status'" style="display:block; float:left; margin : 0 10px;">
+                 <select ng-model="$parent.$parent.keyinput"
+                         class="form-control"
+                         style="padding-top: 2px;"
+                         ng-options="item.value as item.label for item in [{label : '已启用', value : 0},{label : '未启用', value : -1}]"><option value="">请选择...</option></select>
+            </span>
+          <button class="btn btn-primary btn-sm" style="display:block; float:left;margin-top : 0;" ng-disabled="wholeDisabled" ng-click="goSearch()" type="button">
+            <i class="fa fa-search"></i>
+            <span class="hidden-sm">查询</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- dataTable's body, include filter search etc.-->
+      <div class="angular-dataTable-body">
+        <div class="dataTables_wrapper dt-bootstrap no-footer">
+          <div class="dataTables_scroll">
+            <div class="dataTables" style="position: relative; overflow: auto; width: 100%;">
+              <table width="100%" class="table table-hover no-footer dataTable" rappid-views-dom="" id="DataTables_Table_0" role="grid" aria-describedby="DataTables_Table_0_info" style="width: 100%;">
+
+                <thead>
+                <tr role="row" style="height: 0px;">
+                  <th style="width:14px;" ng-if="dataTable.showSelector != false" style="width:20px;" ng-click="allClick()">
+                    <input type="checkbox" ng-model="$parent.allcheck" ng-disabled="wholeDisabled" style="pointer-events: none"/>
+                  </th>
+                  <th ng-if="dataTable.showIndex==true" style="width:20px;">序号</th>
+
+                  <th ng-repeat="(key, header) in dataTable.body" ng-click="sortClick(header, key)" ng-class="sorting(sortBy, header, key)" ng-class="{true : 'sorting', false : ''}[header.sortable]">
+                    <div class="dataTables_sizing" ng-bind="getlabel(header)"></div>
+                  </th>
+                  <th ng-if="dataTable.hasButtons()" style="width:180px;">操作</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-if="dataTable.data.length  < 1">
+                  <td ng-attr-colspan="{{$parent.getFullLength()}}" style="text-align: center;">
+                    没有符合条件的记录
+                  </td>
+                </tr>
+                <tr role="row" style="cursor : pointer;" ng-if="dataTable.data.length > 0"
+                    ng-repeat="row in currentPageData = (filterResult = (dataTable.data | filtersort : dataTable.body : sortBy : searchBy : dataTable.search) | limitTo : getSize() : getStartPoint())"
+                    ng-init="rowInx = $index"
+                    ng-class="trClass(row, source.rowclass)"
+                    ng-click="trClick($event, row);source.events.click(row);">
+                  <td ng-if="dataTable.showSelector != false">
+                    <input type="checkbox" style="pointer-events: none" ng-model="row.selected" />
+                  </td>
+                  <td ng-bind="$index+1" ng-if="dataTable.showIndex==true"></td>
+                  <td ng-repeat="(key, header) in dataTable.body"
+                      ng-click="trClick($event,row, header, key);"
+                      ng-style="{true : {width:header.width}, false : header.style(row, rowInx)}[header.style == undefined]"
+                      data-field-label="{{header.label || header}}">
+                    <span ng-bind="getData(row, header, key)" ng-if="getType(header) == 'text'"></span>
+                    <span ng-if="getType(header) == 'severity'">
+                                    <span class='label' ng-class="getData(row, header, key)[1]" style='color: #ffffff !important;'>{{getData(row, header, key)[0]}}</span>
+                                </span>
+                    <span ng-if="col.modes[{true : 'default', false : row.isEdit}[row.isEdit==undefined]].type=='input'">
+                    <input ng-model="row.cached[col.data]"
+                           ng-attr-placeholder="{{col.modes[{true : 'default', false : row.isEdit}[row.isEdit==undefined]].placeholder}}"
+                           class="form-control"
+                           ng-click="$event.stopPropagation()"
+                           style="width : 100%;"/></span>
+                    <span ng-if="col.modes[{true : 'default', false : row.isEdit}[row.isEdit==undefined]].type=='tree'">
+                    <div class="dropdowntree"
+                         placeholder="请选择..."
+                         showclear="true"
+                         ng-model="row.cached[col.data]"
+                         dt-key="col.key"
+                         options="col.options"
+                         dt-mark="col.mark"></div></span>
+                    <!-- toggle --->
+                    <div ng-if="col.type=='toggle'">
+                      <div fb-toggle
+                           ng-model="row[col.data]"
+                           data-change="col['events']['click'](row, value)">
+                      </div>
+                    </div>
+                    <!-- toggle --->
+                  </td>
+                  <td ng-if="dataTable.hasButtons()" data-field-label="操作">
+                    <div class="btn-group btn-group-sm" ng-class="{true:'open', false :''}[row.open]">
+                      <button ng-repeat="op in dataTable.bodyButtons| limitTo : 2"
+                              ng-disabled="checkButtonDisabled(op)"
+                              ng-class="renderClass(op.class, row)"
+                              ng-click="buttonClick(op, row);$event.stopPropagation();">
+                        <i class="fa hidden-lg hidden-md hidden-sm" ng-class="getButtonIcon(op)"></i>
+                        <span class="hidden-xs" ng-bind="getButtonLabel(op)"></span>
+                      </button>
+                      <button ng-if="dataTable.bodyButtons.length > 2"
+                              type="button" class="btn btn-default dropdown-toggle"
+                              ng-disabled="row.disabled" ng-click="moreclick(row);$event.stopPropagation();">
+                        更多<span class="caret"></span>
+                      </button>
+                      <ul class="dropdown-menu" role="menu">
+                        <li ng-repeat="op in dataTable.bodyButtons | limitTo : 10 : 2">
+                          <a role="button" ng-bind="getButtonLabel(op, row)" ng-show="checkButtonShow(op)"
+                             ng-click="buttonClick(op, row);$event.stopPropagation();row.open=false;">
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="row" ng-if="hasPages()">
+            <div ng-class="{true:'col-sm-3', false : 'col-sm-2'}[source.miniSize == true]">
+              <div class="dataTables_length"><label>每页显示
+                <select class="form-control input-sm"
+                        ng-disabled="wholeDisabled != false && pageResize"
+                        ng-change="sizeChange(page.size)"
+                        ng-model="page.size" ng-options="size as size for size in sizes"></select> 项</label></div>
+            </div>
+            <div ng-class="{true:'col-sm-3', false : 'col-sm-4'}[source.miniSize == true]">
+              <div class="dataTables_info" aria-live="polite" ng-bind="pageDescription()"></div>
+            </div>
+            <div class="col-sm-6">
+              <div class="dataTables_paginate paging_simple_numbers" id="DataTables_Table_0_paginate">
+                <ul class="pagination">
+                  <li class="paginate_button previous" ng-class="isPrevBtnDisabled()" ng-click="page.prevPage()">
+                    <a>上页</a>
+                  </li>
+                  <li class="paginate_button"
+                      ng-class="{true:'active',false:''}[page.current == 0]"
+                      ng-if="true" ng-click="page.moveTo(0)">
+                    <a>1</a>
+                  </li>
+                  <li class="paginate_button disabled" ng-if="ifBeforeMarkShow()">
+                    <a>…</a>
+                  </li>
+                  <li class="paginate_button"
+                      ng-click="page.moveTo(pg)"
+                      ng-class="{true:'active',false:''}[page.current == pg]"
+                      ng-repeat="pg in middleRange()">
+                    <a ng-bind="pg + 1"></a>
+                  </li>
+                  <li class="paginate_button disabled" ng-if="ifAfterMarkShow()">
+                    <a>…</a>
+                  </li>
+                  <li class="paginate_button"
+                      ng-class="{true:'active',false:''}[page.current == page.total - 1]"
+                      ng-if="page.total > 1"
+                      ng-click="page.moveTo(page.total - 1)">
+                    <a ng-bind="page.total"></a>
+                  </li>
+                  <li class="paginate_button next" ng-class="isNextBtnDisabled()" ng-click="page.nextPage()">
+                    <a>下页</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+<script type="text/javascript">
+  export default function(q, timeout, $location){
+    return {
+      restrict: "E",
+      scope: {
+        source: "="
+      },
+      replace: true,
+      link: function (scope, element, attr) {
+        var toString = Object.prototype.toString,
+          isArray = isType("Array"),
+          isObject = isType("Object"),
+          isFunction = isType("Function"),
+          isNumber = isType("Number"),
+          _position = ["label", "type", "bind", "search", "filter"],
+          _btnPosition = ["label", "on.click"],
+          _size = [5, 10, 15, 20, 25, 50, 100];
+        var _objectType = "[object "
+        function extend(a, b) {
+          for (var i in b) {
+            a[i] = b[i];
+          }
+        }
+        function isType(type) {
+          return function (target) {
+            return toString.call(target) == _objectType + type + "]";
+          }
+        }
+        function getTextFromType(type, header) {
+          if (isArray(header)) {
+            var inx = _position.indexOf(type)
+            return header[inx];
+          } else if (isObject(header)) {
+            return header[type];
+          } else if (isFunction(header)) {
+            return header[type];
+          } else {
+            return null
+          }
+        }
+        function getAttrs(obj, attrs) {
+          var arr = attrs.split(".");
+          var target = obj;
+          for (var i in arr) {
+            target = target[arr[i]]
+            if (!target) {
+              break;
+            }
+          }
+          return target
+        }
+        function getButtonFromType(type, header) {
+          if (isArray(header)) {
+            var inx = _btnPosition.indexOf(type)
+            return header[inx];
+          } else if (isObject(header)) {
+            return getAttrs(header, type);
+          } else {
+            return null
+          }
+        }
+        function getButtonFunction(op) {
+          var fn = getButtonFromType("on.click", op);
+          return fn;
+        }
+        function windClick() {
+          $("body").off("click.windClick");
+          scope.$apply(function () {
+            scope.open = false;
+            scope.searchTypeClick = searchTypeClickFn;
+          });
+        }
+        function searchTypeClickFn() {
+          scope.searchTypeClick = undefined;
+          scope.open = true;
+          timeout(function () {
+            $("body").on("click.windClick", windClick)
+          });
+        };
+        function dataTable(data) {
+          dataTable.init = function (data) {
+            extend(this, data);
+          }
+          extend(dataTable.init.prototype, {
+            getPageSize: function () {
+              return data.pageSize || 10;
+            },
+            getData: function () {
+              return data['data'];
+            },
+            push: function (obj) {
+              this.data.unshift(obj);
+            },
+            unshift: function (obj) {
+              this.data.unshift(obj);
+            },
+            remove: function (inx) {
+              this.data.splice(inx, 1);
+            },
+            get: function (inx) {
+              return this.data[inx];
+            },
+            select: function (inx) {
+              this.data[inx].selected = true;
+            },
+            selectAll: function () {
+              for (var i in scope.currentPageData) {
+                scope.currentPageData[i].selected = true;
+              }
+              scope.allcheck = true;
+            },
+            deselectAll: function () {
+              for (var i in scope.currentPageData) {
+                scope.currentPageData[i].selected = false;
+              }
+              scope.allcheck = false;
+            },
+            hasButtons: function () {
+              return isArray(this.bodyButtons) && this.bodyButtons.length > 0;
+            }
+          })
+          return new dataTable.init(data);
+        }
+        function currentPageDataChanges() {
+          timeout(function () {
+            var n = scope.currentPageData;
+            if (isArray(n) && n.length > 0) {
+              scope.allcheck = n.every(function (elem) {
+                return elem.selected == true;
+              });
+            }
+          });
+        }
+        function pages(length, s) {
+          pages.init = function (length, s) {
+            this.current = 0
+            this.length = length;
+            this.total = Math.ceil(length / s);
+            this.size = s;
+          }
+          extend(pages.init.prototype, {
+            setSize: function (s) {
+              this.size = s;
+              this.total = Math.ceil(this.length / s);
+              this.current = 0;
+              currentPageDataChanges();
+            },
+            setLength: function (l) {
+              this.length = l;
+              this.total = Math.ceil(l / this.size);
+              this.current = 0;
+              currentPageDataChanges();
+            },
+            getTotal: function () {
+              return this.total;
+            },
+            getCurrent: function () {
+              return this.current;
+            },
+            isFirst: function () {
+              return this.current == 0;
+            },
+            isLast: function () {
+              return this.current == this.total.length - 1;
+            },
+            nextPage: function () {
+              this.current < this.total && this.current++;
+              currentPageDataChanges();
+            },
+            prevPage: function () {
+              this.current > 0 && this.current--;
+              currentPageDataChanges();
+            },
+            moveTo: function (inx) {
+              this.current = inx;
+              currentPageDataChanges();
+            },
+            getSize: function () {
+              return this.size;
+            },
+            getStartPoint: function () {
+              return this.current * this.size;
+            }
+          })
+          return new pages.init(length, s);
+        }
+        function getSearchFields(body) {
+          var rs = [];
+          for (var i in body) {
+            if (body[i].search !== false) {
+              rs.push(i)
+            }
+          }
+          return rs;
+        }
+        function headerToObj(header) {
+          if (typeof header === "string") {
+            return {
+              label: header,
+              type: "text"
+            }
+          } else if (isArray(header)) {
+            var obj = {};
+            for (var i in header) {
+              obj[_position[i]] = header[i]
+            }
+            return obj;
+          } else if (isObject(header)) {
+            return header;
+          }
+        }
+
+        scope.filterResult;
+        scope.searchBy = {
+          searchFields: []
+        };
+        scope.sortBy = {};
+        scope.buttonClass = function (format) {
+          var cls = format.class;
+          return cls ? "btn-" + cls : "btn-default";
+        }
+        scope.pageDescription = function () {
+          var from = scope.page.current * scope.page.size + 1;
+          var to = (scope.page.current + 1) * scope.page.size;
+          to = to < scope.page.length && to || scope.page.length;
+          var total = scope.page.length;
+          return '第 ' + from + ' 至 ' + to + ' 项，共 ' + total + ' 项'
+        }
+        scope.isPrevBtnDisabled = function () {
+          return scope.page.isFirst() ? "disabled" : "";
+        }
+        scope.isNextBtnDisabled = function () {
+          return scope.page.isLast() ? "disabled" : "";
+        }
+        scope.sizes = _size;
+        scope.getSize = function () {
+          return scope.page && scope.page.size || 10;
+        }
+        scope.getStartPoint = function () {
+          return scope.page ? scope.page.getStartPoint() : 0;
+        }
+        scope.getData = function (row, header, key) {
+          var dt = getTextFromType("bind", header) || row[key];
+          return typeof dt === "function" ? dt(row) : dt;
+        }
+        scope.checkButtonShow = function (op, row) {
+          var fn = getButtonFromType("show", op);
+          if (isFunction(fn)) {
+            return fn(row);
+          } else {
+            return fn !== false;
+          }
+        }
+        scope.getType = function (header) {
+          return getTextFromType("type", header) || "text";
+        }
+        scope.getlabel = function (header) {
+          return getTextFromType("label", header) || header
+        }
+        scope.sizeChange = function (size) {
+          scope.page.setSize(size);
+        };
+        scope.hasPages = function () {
+          return scope.page && scope.page.getTotal() > 0 || false;
+        }
+        scope.ifBeforeMarkShow = function () {
+          var current = scope.page.current;
+          var total = scope.page.total;
+          return current > 2 && total > 3;
+        }
+        scope.middleRange = function () {
+          var arr = [];
+          var current = scope.page.current;
+          var total = scope.page.total;
+          current > 1 && arr.push(current - 1);
+          current > 0 && current < total - 1 && arr.push(current);
+          current < total - 2 && arr.push(current + 1);
+          return arr;
+        }
+        scope.ifAfterMarkShow = function () {
+          var current = scope.page.current;
+          var total = scope.page.total;
+          return current < total - 3 && total > 3;
+        }
+        scope.open = false;
+        scope.renderClass = function (target, row) {
+          var type = typeof target;
+          if (type == 'function') {
+            return target(row);
+          } else if (type == 'string') {
+            return target;
+          } else {
+            return 'btn btn-default';
+          }
+        };
+        scope.colClick = function (event, col, row, i) {
+          event.stopPropagation();
+          isObject(col) && isObject(col.on) && isFunction(col.on.click) && col.on.click(row, i);
+        };
+        scope.sorting = function (sortBy, head, key) {
+          var cls = "";
+          if (head.sortable !== false) {
+            cls += "sorting"
+          }
+          if (sortBy.value == key) {
+            if (sortBy.asc) {
+              cls += "_desc";
+            } else {
+              cls += "_asc";
+            }
+          }
+          return cls;
+        };
+        scope.getButtonLabel = function (op) {
+          return getButtonFromType("label", op)
+        };
+        scope.getButtonIcon = function (op) {
+          return op.iconClass || 'fa-edit';
+        };
+        scope.buttonClick = function (op, row) {
+          var fn = getButtonFunction(op);
+          if (typeof fn === "function") {
+            var inx = scope.dataTable.data.indexOf(row)
+            fn.call(scope.dataTable, row, inx);
+          } else if (typeof fn === "string") {
+            $location.path(fn);
+          }
+        }
+        scope.moreclick = function (row) {
+          scope.open = false;
+          var cache = row.open ? true : false;
+          for (var i in scope.dataTable.data) {
+            scope.dataTable.data[i].open = false;
+          }
+          row.open = !cache;
+        };
+        scope.trClass = function (row, customClass) {
+          var cls = [];
+          if (row.selected) {
+            cls.push("selected");
+          }
+          ;
+          if (typeof customClass == 'function') {
+            var fn = customClass(row);
+            if (fn) {
+              cls.push(fn);
+            }
+          }
+          ;
+          var result = cls.toString().replace(",", " ")
+          return result;
+        };
+        scope.searchTypeClick = searchTypeClickFn;
+        scope.conditionClick = function (header, key) {
+          delete scope.querytype;
+          delete scope.key;
+          delete scope.keyinput;
+          /** add a timespan for renew the menu*/
+          timeout(function () {
+            scope.key = key;
+            scope.querytype = headerToObj(header);
+          });
+        };
+        scope.goSearch = function () {
+          extend(scope.searchBy, {
+            key: scope.key,
+            keyinput: scope.keyinput
+          });
+        };
+        scope.allClick = function () {
+          scope.allcheck = scope.allcheck ? false : true;
+          for (var i in scope.currentPageData) {
+            if (scope.key) {
+              if (scope.currentPageData[i].queryStatus == '1') {
+                scope.currentPageData[i].selected = scope.allcheck;
+              }
+            } else {
+              scope.currentPageData[i].selected = scope.allcheck;
+            }
+          }
+          ;
+        };
+        scope.pageChange = function (value) {
+          if (scope.wholeDisabled != true) {
+            if (value != undefined) {
+              scope.page = value;
+            }
+            if (scope.source.source.length > 0) {
+              scope.from = scope.page * scope.size + 1;
+            } else {
+              scope.from = 0;
+            }
+            if (scope.page < scope.totalpage - 1) {
+              scope.to = (scope.page + 1) * scope.size;
+            } else {
+              scope.to = scope.total;
+            }
+          }
+        };
+        scope.sortClick = function (head, key) {
+          var sortable = head.sortable === false && false || true;
+          if (sortable) {
+            if (scope.sortBy.value != key) {
+              scope.sortBy.value = key;
+              scope.sortBy.asc = true;
+            } else {
+              scope.sortBy.asc = !scope.sortBy.asc;
+            }
+          }
+        };
+        scope.getFullLength = function () {
+          var showIndex = scope.source && scope.source.showIndex;
+          var showSelector = scope.source && scope.source.showSelector;
+          var bodyLength = scope.source && Object.keys(scope.source.body).length;
+          var bodyButtons = scope.source && scope.source.bodyButtons;
+          return bodyLength + (showIndex ? 1 : 0) + (showSelector ? 1 : 0) + (bodyButtons ? 1: 0);
+        };
+        scope.trClick = function (event, row, col, i) {
+          //isObject(col) && isObject(col.on) && isFunction(col.on.click) && col.on.click(row, i);
+
+          isObject(col) && isObject(col.on) && isFunction(col.on.click) && col.on.click(row, i, event);
+
+          if (!event.isPropagationStopped()) {
+            if (!row.disabled && !scope.wholeDisabled) {
+              if (scope.source.couldSelect) {
+                if (scope.source.singleSelect) {
+                  scope.currentPageData.map(function (elem) {
+                    elem.selected = false;
+                  });
+                  row.selected = true;
+                } else {
+                  row.selected = row.selected ? false : true;
+                  scope.allcheck = scope.currentPageData.every(function (elem) {
+                    return elem.selected == true;
+                  });
+                }
+              }
+            }
+          }
+        };
+        var source3Watch;
+        var sourceWatch = scope.$watch("source", function (n, o, s) {
+          if (n) {
+            scope.dataTable = dataTable(n);
+            scope.searchBy.searchFields = getSearchFields(scope.dataTable.body);
+            scope.sortBy = scope.source.sortBy || {};
+            source3Watch = scope.$watch("filterResult.length", function (n, o, s) {
+              if (isNumber(n)) {
+                var size = scope.dataTable.getPageSize();
+                var total = Math.ceil(n, size);
+                scope.page = pages(total, size);
+              }
+            });
+          }
+        });
+        var source2Watch = scope.$watch("source.data", function (n, o, s) {
+        });
+        scope.$on('$destroy', function () {
+          sourceWatch();
+          $("body").off("click.drop");
+          source2Watch();
+          source3Watch();
+        });
+      }
+    };
+  }
+</script>
+<style type="less" @scope>
+
+</style>

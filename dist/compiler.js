@@ -4,7 +4,7 @@ const webpack = require("webpack"),
   beautify = require('js-beautify').js_beautify,
   pathLib = require("path"),
   Filetree = require(pathLib.join(__dirname, "./filetree.js")),
-  _contain = ["controller", "directive", "service", "filter"],
+  _contain = ["controller", "directive", "service", "filter", "style"],
   _templates = {},
   _deps = "./deps.js",
   _workpath = pathLib.resolve(process.cwd()),
@@ -14,7 +14,7 @@ const webpack = require("webpack"),
     module : {
       rules : [
         {
-          test: /\.controller/,
+          test: /\.controller$/,
           use: {
             loader : pathLib.resolve(__dirname, "./angular-loader.js"),
             options : {
@@ -24,7 +24,7 @@ const webpack = require("webpack"),
           }
         },
         {
-          test: /\.directive/,
+          test: /\.directive$/,
           use: {
             loader : pathLib.resolve(__dirname, "./angular-loader.js"),
             options : {
@@ -34,7 +34,7 @@ const webpack = require("webpack"),
           }
         },
         {
-          test: /\.template/,
+          test: /\.template$/,
           use: {
             loader : pathLib.resolve(__dirname, "./angular-loader.js"),
             options : {
@@ -44,7 +44,7 @@ const webpack = require("webpack"),
           }
         },
         {
-          test: /\.service/,
+          test: /\.service$/,
           use: {
             loader : pathLib.resolve(__dirname, "./angular-loader.js"),
             options : {
@@ -54,7 +54,7 @@ const webpack = require("webpack"),
           }
         },
         {
-          test: /\.filter/,
+          test: /\.filter$/,
           use: {
             loader : pathLib.resolve(__dirname, "./angular-loader.js"),
             options : {
@@ -62,6 +62,26 @@ const webpack = require("webpack"),
               data : _templates
             }
           }
+        },
+        {
+          test: /\.less$/,
+          use: [{
+            loader : pathLib.resolve(__dirname, "./angular-loader.js"),
+            options : {
+              type : "style",
+              data : _templates
+            }
+          }]
+        },
+        {
+          test: /\.css$/,
+          use: [{
+            loader : pathLib.resolve(__dirname, "./angular-loader.js"),
+            options : {
+              type : "style",
+              data : _templates
+            }
+          }]
         }
       ]
     }
@@ -100,10 +120,6 @@ function extend(a, b){
   }
   return a;
 }
-/**
-function runJs(configpath){
-  return eval(beautify("(function(__dirname){var module = {};" +  code + "return module.exports;})(\"" + _workpath + "\")"))
-}*/
 function getConfig(name){
   let _config = beautify("const pathLib = require(\"path\");\n\
     module.exports = {\n\
@@ -181,7 +197,7 @@ function makeEntryFile(config, name){
           return exclude ? !exclude.test(str) : true;
         }
         each(root.children, (nd) => {
-          nd.ext === "." + n && check(nd.abspath)?
+          ( nd.ext === ".css" || nd.ext === ".less" || nd.ext === "." + n ) && check(nd.abspath)?
             arr.push(nd.abspath) : null;
         });
         res(arr);

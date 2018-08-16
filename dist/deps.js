@@ -11,4 +11,6 @@ deps["tools"]["filter"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps
 deps["tools"]["filter"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/filters/my-fil.filter"));
 deps["tools"]["service"] = [];
 deps["tools"]["service"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/services/my-ser.service"));
+deps["tools"]["style"] = [];
+deps["tools"]["style"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/styles/index.less"));
 module.exports = deps;

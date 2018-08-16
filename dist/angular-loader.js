@@ -8,12 +8,14 @@ const js_beautify = require('js-beautify').js_beautify,
 module.exports = function (source,map) {
   const option = loaderUtils.getOptions(this),
     templates = option.data;
+  this.cacheable(true);
   let type = option.type,
     alias = switchName(pathLib.basename(this.resourcePath)),
     anychar = "(?:.|\\n)",
     blank = "\\s*",
     space = "[\s\n]*",
     fnStr = "",
+    isScoped;
     test = "",
     uid = uuid(),
     callback = this.async(),
@@ -28,28 +30,37 @@ module.exports = function (source,map) {
               : attr) + ";\n";
         }
       },
-      "template" : {
-        regexp : tagExpr("template"),
-        handler : function(source, attr){
-          source = source ? source : "";
-          return "var template = \"" + prerender(removeAllReture(source)) + "\";\n";
-        }
-      },
       "style" : {
         regexp : tagExpr("style"),
         handler : function(source, attr){
+          attr = attr || {};
+          isScoped = attr.scoped === "true";
+          let css;
           if(attr && attr["type"] === "less"){
             return new Promise(function(res, rej){
               renderLess(source)
                 .then(function(d){
-                  res("var style = \"" + scopedCss(replaceAllReture(d.css)) + "\";\n")
+                  css = isScoped
+                    ? scopedCss(replaceAllReture(d.css))
+                    : replaceAllReture(d.css);
+                  res("var style = \"" + css + "\";\n")
                 }).catch(function(e){
                   rej(e);
               })
             });
           } else {
-            return "var style = \"" + scopedCss(replaceAllReture(source)) + "\";\n";
+            css = isScoped
+              ? scopedCss(replaceAllReture(source))
+              : replaceAllReture(source);
+            return "var style = \"" + css + "\";\n";
           }
+        }
+      },
+      "template" : {
+        regexp : tagExpr("template"),
+        handler : function(source, attr){
+          source = source ? source : "";
+          return "var template = \"" + prerender(removeAllReture(source)) + "\";\n";
         }
       },
       "script" : {
@@ -152,7 +163,9 @@ module.exports = function (source,map) {
         console.dir(json);
       }
       json.children[0].params = json.children[0].params || {};
-      json.children[0].params["scoped-" + uid] = null;
+      if(isScoped){
+        json.children[0].params["scoped-" + uid] = null;
+      }
     }
     s = templateLib.json2html(json, true);
     return replaceAllReture(s);
@@ -395,6 +408,16 @@ module.exports = function (source,map) {
         });
       });
     },
+    "style" : function(){
+      return new Promise(( res, rej ) => {
+        let fnStr = "", val, handler = exprCtrl["style"]["handler"];
+        fnStr += handler(source);
+        fnStr += "module.exports = {\
+             style : style\
+          }"
+        res(fnStr);
+      });
+    }
   }
   renderString[type]().then( (d) => {
       callback(null, js_beautify(d), map);

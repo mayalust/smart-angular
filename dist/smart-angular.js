@@ -82,6 +82,9 @@
   }
   function inject(module, method, list){
     each(list, function(item){
+      if(!item.config){
+        return;
+      }
       var name = item.config.name || item.name,
         fn = remapFunction(method, item[method], item.template),
         config = item.config,

@@ -13,7 +13,7 @@
     isArray = isType("Array"),
     slice = Array.prototype.slice,
     tostring = Object.prototype.toString;
-  let contexts = {},
+  let contexts = {}, module,
     isUndefined = isType("Undefined"),
     _tools = [
       'controllers',
@@ -139,31 +139,27 @@
       console.log(e);
     }
   }
-  function loadModule(callback){
-    console.log("ps_" + deps.name);
-    var module = angular.module("ps_" + deps.name, ['ngRoute']), combinedCss = "";
-    eachProp(deps["tools"], function(res, type){
-      inject(module, type, res);
-      combinedCss += addCss(res);
-    });
-    renderCss(combinedCss);
-    module.config([
-      '$routeProvider', '$locationProvider',
-      function($routeProvider, $locationProvider) {
-        var controllers = deps["tools"]["controller"], defaultRouter;
-        eachProp(controllers, function(ctrl, i){
-          defaultRouter = defaultRouter || (ctrl.config.defaultRouter ? ctrl.config.router : null)
-          $routeProvider.when("/" + ctrl.config.router, {
-            template : ctrl.template,
-            controller: ctrl.config.name || ctrl.name
-          })
-        });
-        $locationProvider.hashPrefix('');
-        console.log("默认路由为:", defaultRouter);
-        $routeProvider.otherwise({redirectTo:'/' + ( defaultRouter ? defaultRouter : "")});
-      }
-    ]);
-    callback(module);
-  }
-  return loadModule;
+  module = angular.module("ps_" + deps.name, ['ngRoute']), combinedCss = "";
+  eachProp(deps["tools"], function(res, type){
+    inject(module, type, res);
+    combinedCss += addCss(res);
+  });
+  renderCss(combinedCss);
+  module.config([
+    '$routeProvider', '$locationProvider',
+    function($routeProvider, $locationProvider) {
+      var controllers = deps["tools"]["controller"], defaultRouter;
+      eachProp(controllers, function(ctrl, i){
+        defaultRouter = defaultRouter || (ctrl.config.defaultRouter ? ctrl.config.router : null)
+        $routeProvider.when("/" + ctrl.config.router, {
+          template : ctrl.template,
+          controller: ctrl.config.name || ctrl.name
+        })
+      });
+      $locationProvider.hashPrefix('');
+      console.log("默认路由为:", defaultRouter);
+      $routeProvider.otherwise({redirectTo:'/' + ( defaultRouter ? defaultRouter : "")});
+    }
+  ]);
+  return module;
 })

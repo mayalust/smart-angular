@@ -11,6 +11,11 @@ module.exports = function(cmd, name){
     case "dev":
       developer.run(name);
       break;
+    case "webpackdev" :
+      return function(app){
+        developer.run(name, app);
+      }
+      break;
     default :
       break;
   }

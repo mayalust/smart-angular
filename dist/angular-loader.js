@@ -11,9 +11,9 @@ module.exports = function (source,map) {
   this.cacheable(true);
   let type = option.type,
     alias = switchName(pathLib.basename(this.resourcePath)),
-    anychar = "(?:.|\\n)",
+    anychar = "(?:.|\\n|\\r)",
     blank = "\\s*",
-    space = "[\s\n]*",
+    space = "[\s\n\r]*",
     fnStr = "",
     isScoped,
     test = "",

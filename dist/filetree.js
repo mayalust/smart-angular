@@ -154,6 +154,10 @@ class FileTree {
                 resolve(d);
               })
             });
+          } else {
+            reject({
+              code : "EMPTYROOT"
+            })
           }
         })
       })
@@ -161,6 +165,8 @@ class FileTree {
     var self = this;
     bind(recursion, this)(this.rootNode, "").then((d) => {
       this.events['start'] && this.events['start'].call(this, this.rootNode);
+    }).catch((e) => {
+      this.events['error'] && this.events['error'].call(this, e);
     })
   }
   addNode(path, type, parentNode){

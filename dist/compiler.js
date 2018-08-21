@@ -216,6 +216,9 @@ function makeEntryFile(config, name){
         res(arr);
         obj[n] = arr;
       });
+      t.on("error", (e) => {
+        res(null)
+      })
     });
   })).then((paths) =>{
     var str = (

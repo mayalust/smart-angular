@@ -120,17 +120,30 @@ function extend(a, b){
   }
   return a;
 }
+function makeDefaultConf(name){
+  let paths = ["template"].concat(_contain),
+    end = paths.pop()
+  return beautify(["const pathLib = require(\"path\");",
+    "let filepath = pathLib.resolve(__filename, \"..\/\");",
+    "module.exports = {",
+    "name : \"" + name + "\",",
+    "output: pathLib.resolve(__filename, \"./ps-" + name + "/output.js\"),"
+  ].concat(paths.map((n, i) => {
+    console.log(n);
+    return n + "s : { path : pathLib.resolve(filepath, \"./ps-" + name + "/"+ n +"s\"), exclude : \/\\.test\/g },"
+  })).concat([end].map((n, i) => {
+    console.log(n);
+    return n + "s : { path : pathLib.resolve(filepath, \"./ps-" + name + "/"+ n +"s\"), exclude : \/\\.test\/g }"
+  })).concat(["}"]).join(""));
+}
 function getConfig(name){
-  let _config = beautify("const pathLib = require(\"path\");\n\
-    module.exports = {\n\
-      main : pathLib.resolve(\"./ps-" + name + "\")\n\
-    }");
+  var str = makeDefaultConf(name);
   return new Promise((res, rej) => {
     let configpath = pathLib.join(_workpath, "ps-" + name + ".config.js");
     fs.readFile(configpath, (err, d) => {
       if(err){
-        err.errno == -2 && err.code == "ENOENT"
-          ? fs.writeFile(pathLib.join(_workpath, "ps-" + name + ".config.js"), _config, (err) => {
+        err.code == "ENOENT"
+          ? fs.writeFile(pathLib.join(_workpath, "ps-" + name + ".config.js"), str, (err) => {
             err ? (
               console.error("创建配置文件失败"),
                 rej(err)
@@ -324,15 +337,8 @@ function createContainedFiles(name){
   })
 }
 function makeConfigFile(name){
-  var str = "const pathLib = require(\"path\");"
-  str += "let filepath = pathLib.resolve(__filename, \"..\/\");"
-  str += "module.exports = {";
-  str += "name : \"" + name + "\",";
-  str += "output: pathLib.resolve(__filename, \"./ps-" + name + "/output.js\"),";
-  str += ["template"].concat(_contain).map((n) => {
-    return n + "s : { path : pathLib.resolve(filepath, \"./ps-" + name + "/"+ n +"s\"), exclude : \/\\.test\/g },"
-  }).join("");
-  str += "}";
+  var str = makeDefaultConf(name);
+  console.log(str);
   return new Promise((res, rej) => {
     let p = pathLib.join( _workpath , "./ps-" + name + ".config.js");
     fs.writeFile(p, beautify(str), (err) => {

@@ -1,6 +1,6 @@
 {
   "name": "smart-angular",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "description": "proudsmart smart-angular",
   "main": "./dist/index.js",
   "scripts": {

@@ -316,13 +316,13 @@ module.exports = function (source,map) {
         Promise.all(promises).then((arr) => {
           let fnStr = "";
           fnStr += arr.join("")
-          fnStr += "module.exports = {\
-            name : \"" + alias + "\",\
-            config : config,\
-            template : template,\
-            style : style,\
-            " + type + " : exports.default || module.exports\
-          }";
+          fnStr += `\nmodule.exports = {
+            name : \"${alias}\",
+            config : config,
+            template : template,
+            style : style,
+            ${type} : exports.default || module.exports
+          }`;
           res(fnStr);
         }).catch((e) => {
           console.error(e);
@@ -349,12 +349,12 @@ module.exports = function (source,map) {
         });
         Promise.all(promises).then((arr) => {
           let fnStr = "";
-          fnStr += arr.join("")
-          fnStr += "module.exports = {\
-            name : \"" + alias + "\",\
-            config : config,\
-            " + type + " : exports.default || module.exports\
-          }";
+          fnStr += arr.join("";
+          fnStr += `\nmodule.exports = {
+            name : \"${alias}\",
+            config : config,
+            ${type} : exports.default || module.exports
+          }`;
           res(fnStr);
         }).catch((e) => {
           console.error(e);
@@ -381,14 +381,14 @@ module.exports = function (source,map) {
         });
         Promise.all(promises).then((arr) => {
           let fnStr = "";
-          fnStr += arr.join("")
-          fnStr += "module.exports = {\
-            name : \"" + alias + "\",\
-            config : config,\
-            template : template,\
-            style : style,\
-            " + type + " : exports.default || module.exports\
-          }";
+          fnStr += arr.join("");
+          fnStr += `\nmodule.exports = {
+            name : \"${alias}\",
+            config : config,
+            template : template,
+            style : style,
+            ${type} : exports.default || module.exports
+          }`;
           res(fnStr);
         }).catch((e) => {
           console.error(e);
@@ -415,12 +415,12 @@ module.exports = function (source,map) {
         });
         Promise.all(promises).then((arr) => {
           let fnStr = "";
-          fnStr += arr.join("")
-          fnStr += "module.exports = {\
-            name : \"" + alias + "\",\
-            config : config,\
-            " + type + " : exports.default || module.exports\
-          }";
+          fnStr += arr.join("");
+          fnStr += `\nmodule.exports = {
+            name : \"${alias}\",
+            config : config,
+            ${type} : exports.default || module.exports
+          }`;
           res(fnStr);
         }).catch((e) => {
           console.error(e);
@@ -432,38 +432,36 @@ module.exports = function (source,map) {
       return new Promise(( res, rej ) => {
         let fnStr = "", val, handler = exprCtrl["style"]["handler"];
         fnStr += handler(source);
-        fnStr += "module.exports = {\
-             style : style\
-          }"
+        fnStr += `\nmodule.exports = {
+          style : style
+        }`
         res(fnStr);
       });
     },
     "less" : function(){
       return new Promise(( res, rej ) => {
-        let fnStr = "",
-          val,
+        let fnStr = "", val,
           handler = exprCtrl["style"]["handler"],
           promise = handler(source, {type : "less"});
         promise.then(function(str){
           fnStr += str;
-          fnStr += "module.exports = {\
-             style : style\
-          }"
+          fnStr += `\nmodule.exports = {
+            style : style
+          }`;
           res(fnStr);
         })
       });
     },
     "sass" : function(){
       return new Promise(( res, rej ) => {
-        let fnStr = "",
-          val,
+        let fnStr = "", val,
           handler = exprCtrl["style"]["handler"],
           promise = handler(source, {type : "sass"});
         promise.then(function(str){
           fnStr += str;
-          fnStr += "module.exports = {\
-             style : style\
-          }"
+          fnStr += `\nmodule.exports = {
+            style : style
+          }`;
           res(fnStr);
         })
       });

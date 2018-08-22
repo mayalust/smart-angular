@@ -349,7 +349,7 @@ module.exports = function (source,map) {
         });
         Promise.all(promises).then((arr) => {
           let fnStr = "";
-          fnStr += arr.join("";
+          fnStr += arr.join("");
           fnStr += `\nmodule.exports = {
             name : \"${alias}\",
             config : config,

@@ -2,6 +2,7 @@ const js_beautify = require('js-beautify').js_beautify,
   templateLib = require("proudsmart-template"),
   pathLib = require("path"),
   less = require("less"),
+  sass = require("sass"),
   babel = require("babel-core"),
   CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split(''),
   loaderUtils = require("loader-utils");
@@ -46,6 +47,18 @@ module.exports = function (source,map) {
                   res("var style = \"" + css + "\";\n")
                 }).catch(function(e){
                   rej(e);
+              })
+            });
+          } else if(attr && attr["type"] === "sass"){
+            return new Promise(function(res, rej){
+              renderSass(source)
+                .then(function(d){
+                  css = isScoped
+                    ? scopedCss(replaceAllReture(d.css))
+                    : replaceAllReture(d.css);
+                  res("var style = \"" + css + "\";\n")
+                }).catch(function(e){
+                rej(e);
               })
             });
           } else {
@@ -99,6 +112,15 @@ module.exports = function (source,map) {
   }
   function renderLess(input){
     return less.render(input, {sourceMap: {sourceMapFileInline: true}});
+  }
+  function renderSass(input){
+    return new Promise((res, rej) => {
+      sass.render({data : input}, (err, result) => {
+        err
+          ? rej(err)
+          : res(result);
+      })
+    });
   }
   function uuid(len, radix) {
     let chars = CHARS, uuid = [], i;
@@ -414,6 +436,36 @@ module.exports = function (source,map) {
              style : style\
           }"
         res(fnStr);
+      });
+    },
+    "less" : function(){
+      return new Promise(( res, rej ) => {
+        let fnStr = "",
+          val,
+          handler = exprCtrl["style"]["handler"],
+          promise = handler(source, {type : "less"});
+        promise.then(function(str){
+          fnStr += str;
+          fnStr += "module.exports = {\
+             style : style\
+          }"
+          res(fnStr);
+        })
+      });
+    },
+    "sass" : function(){
+      return new Promise(( res, rej ) => {
+        let fnStr = "",
+          val,
+          handler = exprCtrl["style"]["handler"],
+          promise = handler(source, {type : "sass"});
+        promise.then(function(str){
+          fnStr += str;
+          fnStr += "module.exports = {\
+             style : style\
+          }"
+          res(fnStr);
+        })
       });
     }
   }

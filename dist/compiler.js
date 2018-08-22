@@ -68,7 +68,17 @@ const webpack = require("webpack"),
           use: [{
             loader : pathLib.resolve(__dirname, "./angular-loader.js"),
             options : {
-              type : "style",
+              type : "less",
+              data : _templates
+            }
+          }]
+        },
+        {
+          test: /\.sass$/,
+          use: [{
+            loader : pathLib.resolve(__dirname, "./angular-loader.js"),
+            options : {
+              type : "sass",
               data : _templates
             }
           }]

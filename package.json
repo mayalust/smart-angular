@@ -1,6 +1,6 @@
 {
   "name": "smart-angular",
-  "version": "1.0.42",
+  "version": "1.0.43",
   "description": "proudsmart smart-angular",
   "main": "./dist/index.js",
   "repository": {
@@ -11,6 +11,11 @@
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/mayalust/smart-angular/issues"
+  },
+  "scripts" : {
+    "init" : "dist/run.js init",
+    "pack" : "dist/run.js pack",
+    "dev" : "dist/run.js dev"
   },
   "bin": {
     "smart-angular": "./dist/run.js"

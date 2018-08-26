@@ -1,11 +1,8 @@
 {
   "name": "smart-angular",
-  "version": "1.0.40",
+  "version": "1.0.42",
   "description": "proudsmart smart-angular",
   "main": "./dist/index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mayalust/smart-angular.git"

@@ -36,6 +36,7 @@ module.exports = {
         });
         res.end();
       });
+      app.use(express.static(pathLib.resolve(process.cwd(), "./node_modules")));
       app.use(express.static(pathLib.resolve(__dirname, "../node_modules")));
       app.use(express.static(pathLib.resolve(process.cwd())));
       app.listen(9000);

@@ -1,8 +1,6 @@
 var deps = {};
 deps["name"] = "core"
 deps["tools"] = {}
-deps["tools"]["controller"] = [];
-deps["tools"]["controller"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/controllers/index.controller"));
 deps["tools"]["directive"] = [];
 deps["tools"]["directive"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/directives/my-dir.directive"));
 deps["tools"]["directive"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/directives/my-table.directive"));
@@ -13,4 +11,6 @@ deps["tools"]["filter"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps
 deps["tools"]["filter"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/filters/my-fil.filter"));
 deps["tools"]["style"] = [];
 deps["tools"]["style"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/styles/index.less"));
+deps["tools"]["controller"] = [];
+deps["tools"]["controller"].push(require("/Users/leonlin/Linjingbin/smart-angular/ps-core/controllers/index.controller"));
 module.exports = deps;

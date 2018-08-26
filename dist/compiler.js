@@ -112,6 +112,16 @@ function each(arr, callback){
     }
   }
 }
+function some(arr, callback){
+  if(arr){
+    for(let i = 0; i < arr.length; i++){
+      if(callback(arr[i], i)){
+        return true;
+      };
+    }
+  }
+  return false
+}
 function eachProp(obj, callback){
   for(var i in obj){
     callback(obj[i], i);
@@ -130,6 +140,22 @@ function extend(a, b){
   }
   return a;
 }
+function check(str, exclude){
+  let rs;
+  if(exclude instanceof RegExp){
+    rs = exclude ? !exclude.test(str) : true
+  } else if( exclude instanceof Array ){
+    rs = !some(exclude, function(exd){
+      return exd ? exd.test(str) : true;
+    })
+  } else {
+    rs = false;
+  }
+  if(!rs){
+    info(str, "文件不被倒入");
+  }
+  return rs;
+}
 function makeDefaultConf(name){
   let paths = ["template"].concat(_contain),
     end = paths.pop()
@@ -139,11 +165,9 @@ function makeDefaultConf(name){
     "name : \"" + name + "\",",
     "output: pathLib.resolve(__filename, \"./ps-" + name + "/output.js\"),"
   ].concat(paths.map((n, i) => {
-    console.log(n);
-    return n + "s : { path : pathLib.resolve(filepath, \"./ps-" + name + "/"+ n +"s\"), exclude : \/\\.test\/g },"
+    return n + "s : { path : pathLib.resolve(filepath, \"./ps-" + name + "/"+ n +"s\"), exclude : [\/\\.test\/g, /[\\\\\\/]exclude[\\\\\\/]/g] },"
   })).concat([end].map((n, i) => {
-    console.log(n);
-    return n + "s : { path : pathLib.resolve(filepath, \"./ps-" + name + "/"+ n +"s\"), exclude : \/\\.test\/g }"
+    return n + "s : { path : pathLib.resolve(filepath, \"./ps-" + name + "/"+ n +"s\"), exclude : [\/\\.test\/g, /[\\\\\\/]exclude[\\\\\\/]/g] }"
   })).concat(["}"]).join(""));
 }
 function getConfig(name){
@@ -183,7 +207,7 @@ function makeTemplates(config){
       });
       obj["template"] = paths;
       var promises = paths.filter((p) =>{
-        return exclude ? !exclude.test(p) : true
+        return check(p, exclude);
       }).map((p) =>{
         return new Promise((res, rej) => {
           fs.readFile(p, (err, d) => {
@@ -216,11 +240,14 @@ function makeEntryFile(config, name){
     return new Promise((res, rej) => {
       t.on("start", (root) => {
         let arr = [];
-        function check(str){
-          return exclude ? !exclude.test(str) : true;
+        function recursive(node, callback){
+          callback && callback(node);
+          each(node.children, (nd) => {
+            recursive(nd, callback);
+          });
         }
-        each(root.children, (nd) => {
-          ( nd.ext === ".css" || nd.ext === ".less" || nd.ext === "." + n ) && check(nd.abspath)?
+        recursive(root, (nd) => {
+          ( nd.ext === ".css" || nd.ext === ".less" || nd.ext === "." + n ) && check(nd.abspath, exclude)?
             arr.push(nd.abspath) : null;
         });
         res(arr);
@@ -351,7 +378,6 @@ function createContainedFiles(name){
 }
 function makeConfigFile(name){
   var str = makeDefaultConf(name);
-  console.log(str);
   return new Promise((res, rej) => {
     let p = pathLib.join( _workpath , "./ps-" + name + ".config.js");
     fs.writeFile(p, beautify(str), (err) => {

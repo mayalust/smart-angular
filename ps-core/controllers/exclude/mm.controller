@@ -1,0 +1,44 @@
+<config router="index"
+        defaultRouter = "true"
+        injector="$scope,mySer"
+></config>
+<template>
+  <div>
+    <div class="wrap">
+      <span>controller : </span><span>{{mymsg}}</span>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <my-table data-source="source"></my-table>
+      </div>
+    </div>
+    <div class="wrap">
+      <span>service : </span><span>{{serMsg}}</span>
+    </div>
+  </div>
+</template>
+<script type="text/javascript">
+  export default function(scope, mySer){
+    scope.mymsg = `欢迎使用smart-angular!123`;
+    scope.serMsg = mySer.message;
+    scope.source = {
+      data : [{
+        a : "a",
+        b : "b"
+      }],
+      body : {
+        a : "d1",
+        b : "d2"
+      }
+    }
+  }
+</script>
+<style type="less" scoped="true">
+  .wrap{
+    margin : 5px;
+    padding : 10px;
+    color : #333;
+    background-color : #eee;
+    border : 1px solid #ddd;
+  }
+</style>

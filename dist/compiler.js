@@ -146,7 +146,7 @@ function check(str, exclude){
     rs = exclude ? !exclude.test(str) : true
   } else if( exclude instanceof Array ){
     rs = !some(exclude, function(exd){
-      return exd ? exd.test(str) : true;
+      return exd ? exd.test(str) : true
     })
   } else {
     rs = false;

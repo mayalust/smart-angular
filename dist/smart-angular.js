@@ -86,17 +86,17 @@
         return;
       }
       var name = item.config.name || item.name,
-        fn = remapFunction(method, item[method], item.template),
         config = item.config,
         type = config.type,
+        mtd = method === "service"
+          ? ( type || "factory")
+          : method,
+        fn = remapFunction(method, item[method], item.template),
         p = str2Array(config.injector),
         params = p ? p.concat([fn]) : fn;
-      method = method === "service"
-        ? ( type || "factory")
-        : method;
-      console.log(method, name, params);
+      console.log(mtd, name, params);
       name
-        ? module[method](name, params)
+        ? module[mtd](name, params)
         : console.warn("没有提供名称的组件不能被注册。")
     });
   }

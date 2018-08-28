@@ -1,0 +1,37 @@
+<config injector="$timeout"
+></config>
+<template>
+  <div class="col-end">
+  </div>
+</template>
+<script type="text/javascript">
+  export default function(timeout){
+    return {
+      scope : {
+        parentList : "="
+      },
+      require : "?ngModel",
+      link(scope, element, attr, ngModel){
+        //console.log(scope.parentList);
+        element[0].style.height = "auto";
+        element[0].__isColEnd__ = true;
+        element[0].__parentList__ = scope.parentList;
+        //console.dir(element[0]);
+        function render(){
+          let cparent = element[0].parentElement,
+            pparent = cparent.parentElement,
+            diff =  pparent.clientHeight - cparent.clientHeight - 1;
+          element[0].style.height = diff > 0
+            ? element[0].clientHeight + diff + "px"
+            : element[0].style.height;
+        }
+        timeout(() => {
+          render();
+        });
+      }
+    }
+  }
+</script>
+<style type="less" scoped="true">
+
+</style>

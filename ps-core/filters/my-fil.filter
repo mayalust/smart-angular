@@ -1,0 +1,10 @@
+<config injector="$location"
+></config>
+<script type="text/javascript">
+  export default function(location){
+    var factory = {
+      message : "filter使用范例"
+    }
+    return factory;
+  }
+</script>

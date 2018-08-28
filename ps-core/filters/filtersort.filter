@@ -1,0 +1,61 @@
+<config injector=""
+></config>
+<script type="text/javascript">
+  export default function(){
+    return function(input, header, sortBy, searchBy, searchFunction) {
+      var searchArea = searchBy.key,
+        searchKey = searchBy.keyinput,
+        searchFields = searchBy.searchFields,
+        searchFunction = searchFunction || function () {
+        };
+      if (typeof sortBy === "object") {
+        var key = sortBy.value, asc = sortBy.asc;
+        sortBy = function (a, b) {
+          return asc ? a[key] > b[key] : a[key] < b[key]
+        };
+      }
+      function sort(arr, callback) {
+        var rs = [];
+        for (var i in arr) {
+          for (var j = rs.length - 1; j > -1;) {
+            if (callback(arr[i], rs[j])) {
+              rs[j + 1] = rs[j];
+              j--;
+            } else {
+              break;
+            }
+          }
+          rs[j + 1] = arr[i]
+        }
+        return rs;
+      }
+      function Arraysort(input, cb) {
+        input.sort(cb);
+        return input;
+      }
+      var rs = Arraysort(input ? [].slice.call(input) : [], sortBy);
+      function hasCharacters(val, target) {
+        if (typeof val === "number") {
+          val = val + "";
+        }
+        val = typeof val == "string" ? val : "";
+        return val.indexOf(target) !== -1
+      }
+      rs = rs.filter(function (e, i) {
+        if (searchFunction(e, i) == false) return false;
+        if (!searchKey) return true;
+        if (!searchArea) {
+          for (var i in searchFields) {
+            var sf = searchFields[i];
+            if (hasCharacters(e[sf], searchKey))
+              return true;
+          }
+          return false;
+        } else {
+          return hasCharacters(e[searchArea], searchKey);
+        }
+      });
+      return rs;
+    };
+  }
+</script>

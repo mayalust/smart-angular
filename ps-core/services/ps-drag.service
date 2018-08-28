@@ -1,0 +1,56 @@
+<config injector="psCommand,$rootScope" type="factory"
+></config>
+<script type="text/javascript">
+  export default function(psCommand,rootScope){
+    return function(target, option, parentList, dom){
+      let replacer = document.createComment(`移动节点`),
+        helper = document.createElement(`div`),
+        freeboard = document.getElementById(`freeboard`),
+        parent = dom.parentElement,
+        offset = [ 10 , 10 ];
+      target.onmousedown = onmousedown;
+      helper.setAttribute(`class`, `helper`);
+      function setPos(x, y){
+        helper.style.top = `${y}px`;
+        helper.style.left = `${x}px`;
+      }
+      function onmousedown(e){
+        if(dom){
+          parent.replaceChild(replacer, dom);
+          document.onmouseup = onmouseup;
+        }
+        freeboard.setAttribute(`class`, `mousedown`);
+        document.body.append(helper);
+        setPos(e.pageX - offset[0], e.pageY - offset[1]);
+        target.onmousedown = null;
+        window.onmousemove = function(e){
+          setPos(e.pageX - offset[0], e.pageY - offset[1]);
+        }
+      }
+      function onmouseup(e){
+        let domtarget = e.target, list;
+        console.dir(domtarget);
+        if(domtarget.__isColEnd__ = true){
+          list = domtarget.__parentList__;
+          rootScope.$apply(function(){
+            psCommand.add([
+              psCommand.append(list, option),
+              psCommand.remove(parentList, parentList.indexOf(option))
+            ]);
+            console.log(list, parentList);
+          });
+        } else if(domtarget.__isColHead__ = true){
+          list = domtarget.__parentList__;
+        }
+        if(dom){
+          parent.replaceChild(dom, replacer);
+          document.onmouseup = null;
+          target.onmousedown = onmousedown;
+        }
+        freeboard.removeAttribute(`class`);
+        helper.remove();
+        window.onmousemove = null;
+      }
+    };
+  }
+</script>

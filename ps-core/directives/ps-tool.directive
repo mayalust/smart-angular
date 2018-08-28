@@ -1,0 +1,44 @@
+<config injector="$q,$compile,psDrag"
+        type = "factory"
+></config>
+<template>
+  <div class="item">
+  </div>
+</template>
+<script type="text/javascript">
+  export default function(q,compile,psDrag){
+    return {
+      scope : {
+        option : `=`,
+        parentList : `=`
+      },
+      link(scope, element, attr){
+        let tar = element[0];
+        function each(arr, callback){
+          arr = arr || [];
+          for(var i = 0;i<arr.length; i++ ){
+            callback(arr[i],i);
+          }
+        }
+        function $append(target, dom){
+          target.appendChild(dom);
+          compile(dom)(scope);
+        }
+        let iteminner = document.createElement(`div`);
+          el = document.createElement(`ps-${scope.option.type}`),
+          head = document.createElement(`div`);
+          colHead = document.createElement(`col-head`);
+        iteminner.setAttribute(`class`,`item-inner`);
+        head.setAttribute(`class`, `header`);
+        el.setAttribute(`data-option`, `option`);
+        psDrag(head, scope.option, scope.parentList, element[0]);
+        iteminner.appendChild(head);
+        iteminner.appendChild(el);
+        $append(tar, colHead);
+        $append(tar, iteminner);
+      }
+    }
+  }
+</script>
+<style type="less">
+</style>

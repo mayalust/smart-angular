@@ -1,0 +1,36 @@
+<config injector="$q, $compile, $timeout"
+></config>
+<template>
+  <div id="freeboard">
+    <div class="col-contain">
+      <ps-tool
+          ng-repeat="option in options"
+          data-option="option">
+      </ps-tool>
+      <col-end
+          data-parent-list="options"
+      ></col-end>
+    </div>
+  </div>
+</template>
+<script type="text/javascript">
+  function each(arr, callback){
+    arr = arr || [];
+    for(var i = 0;i<arr.length; i++ ){
+      callback(arr[i],i);
+    }
+  }
+  export default function(q, compile, timeout){
+    return {
+      scope : {
+        options : "="
+      },
+      link(scope, element, attr){
+
+      }
+    }
+  }
+</script>
+<style type="less">
+
+</style>

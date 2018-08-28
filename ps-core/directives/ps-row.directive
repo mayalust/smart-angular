@@ -1,0 +1,29 @@
+<config injector=""
+></config>
+<template>
+  <div class="colwrap">
+    <div ng-repeat="op in option.children"
+      ng-class="'col-xs-' + op.col">
+      <ps-col data-option="op"></ps-col>
+      <col-end
+          data-parent-list="op.children">
+      </col-end>
+    </div>
+  </div>
+</template>
+<script type="text/javascript">
+  export default function(){
+    return {
+      scope : {
+        option : "="
+      },
+      link(scope){
+        scope.$on("$destroy", (e) => {
+          console.log("destroyed:[row]!!");
+        })
+      }
+    }
+  }
+</script>
+<style type="less">
+</style>

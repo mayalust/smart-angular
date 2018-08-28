@@ -2,10 +2,10 @@
 ></config>
 <template>
   <div>
-    <ps-tool ng-repeat="op in option.children"
+    <ps-tool-preview ng-repeat="op in option.children"
              data-option="op"
              data-parent-list="option.children">
-    </ps-tool>
+    </ps-tool-preview>
   </div>
 </template>
 <script type="text/javascript">

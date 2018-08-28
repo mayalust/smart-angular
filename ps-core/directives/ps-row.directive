@@ -4,8 +4,9 @@
   <div class="colwrap">
     <div ng-repeat="op in option.children"
       ng-class="'col-xs-' + op.col">
-      <ps-col data-option="op"></ps-col>
-      <col-end
+      <ps-col-preview data-option="op" ng-if="preview"></ps-col-preview>
+      <ps-col data-option="op" ng-if="!preview"></ps-col>
+      <col-end ng-if="!preview"
           data-parent-list="op.children">
       </col-end>
     </div>
@@ -15,7 +16,8 @@
   export default function(){
     return {
       scope : {
-        option : "="
+        option : "=",
+        preview : "="
       },
       link(scope){
         scope.$on("$destroy", (e) => {

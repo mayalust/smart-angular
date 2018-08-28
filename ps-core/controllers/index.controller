@@ -2,8 +2,12 @@
     injector="$scope,$q,$timeout"
 ></config>
 <template>
-  {{options}}
-  <free-board data-options="options"></free-board>
+  <free-board-preview
+      data-options="options">
+  </free-board-preview>
+  <free-board
+      data-options="options">
+  </free-board>
 </template>
 <script type="text/javascript">
   export default function(scope,q,timeout){

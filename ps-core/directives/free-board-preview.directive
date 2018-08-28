@@ -1,16 +1,13 @@
 <config injector="$q, $compile, $timeout"
 ></config>
 <template>
-  <div id="freeboard">
+  <div id="freeboard-preview">
     <div class="col-contain">
-      <ps-tool
+      <ps-tool-preview
           ng-repeat="option in options"
           data-parent-list="options"
           data-option="option">
-      </ps-tool>
-      <col-end
-          data-parent-list="options"
-      ></col-end>
+      </ps-tool-preview>
     </div>
   </div>
 </template>

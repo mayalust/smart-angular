@@ -22,7 +22,7 @@
       insert(parentlist, item, num){
         let cmd = [
           function(){
-            parentlist.splice(num, 1, item);
+            parentlist.splice(num, 0, item);
           },
           function(){
             parentlist.splice(num, 1);
@@ -41,7 +41,6 @@
           }
         ];
         cmd[0]();
-        console.log("parentlist", parentlist);
         return cmd;
       },
       update(newobj, oldobj){

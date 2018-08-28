@@ -8,10 +8,14 @@
   export default function(timeout){
     return {
       scope : {
+        option : "=",
         parentList : "="
       },
       link(scope, element, attr){
-
+        element[0].style.height = "auto";
+        element[0].__isColHead__ = true;
+        element[0].__parentList__ = scope.parentList;
+        element[0].__index__ = scope.parentList.indexOf(scope.option);
       }
     }
   }

@@ -1,7 +1,7 @@
-<config injector="psCommand,$rootScope" type="factory"
+<config injector="psCommand,$rootScope,$timeout" type="factory"
 ></config>
 <script type="text/javascript">
-  export default function(psCommand,rootScope){
+  export default function(psCommand,rootScope,timeout){
     return function(target, option, parentList, dom){
       let replacer = document.createComment(`移动节点`),
         helper = document.createElement(`div`),
@@ -22,34 +22,43 @@
         freeboard.setAttribute(`class`, `mousedown`);
         document.body.append(helper);
         setPos(e.pageX - offset[0], e.pageY - offset[1]);
+        timeout(() => {
+          rootScope.$broadcast(`freeboard:changed`)
+        }, 300);
         target.onmousedown = null;
         window.onmousemove = function(e){
           setPos(e.pageX - offset[0], e.pageY - offset[1]);
         }
       }
       function onmouseup(e){
-        let domtarget = e.target, list;
-        console.dir(domtarget);
-        if(domtarget.__isColEnd__ = true){
-          list = domtarget.__parentList__;
-          rootScope.$apply(function(){
+        rootScope.$apply(() => {
+          let domtarget = e.target, list;
+          if(domtarget.__isColEnd__ == true){
+            list = domtarget.__parentList__;
             psCommand.add([
               psCommand.append(list, option),
               psCommand.remove(parentList, parentList.indexOf(option))
             ]);
-            console.log(list, parentList);
-          });
-        } else if(domtarget.__isColHead__ = true){
-          list = domtarget.__parentList__;
-        }
-        if(dom){
-          parent.replaceChild(dom, replacer);
-          document.onmouseup = null;
-          target.onmousedown = onmousedown;
-        }
-        freeboard.removeAttribute(`class`);
-        helper.remove();
-        window.onmousemove = null;
+          } else if(domtarget.__isColHead__ == true){
+            list = domtarget.__parentList__;
+            inx = domtarget.__index__;
+            psCommand.insert([
+              psCommand.insert(list, option, inx),
+              psCommand.remove(parentList, parentList.indexOf(option))
+            ]);
+          }
+          if(dom){
+            parent.replaceChild(dom, replacer);
+            document.onmouseup = null;
+            target.onmousedown = onmousedown;
+          }
+          freeboard.removeAttribute(`class`);
+          timeout(() => {
+            rootScope.$broadcast(`freeboard:changed`)
+          }, 300);
+          helper.remove();
+          window.onmousemove = null;
+        });
       }
     };
   }

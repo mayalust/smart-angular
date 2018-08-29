@@ -1,0 +1,92 @@
+<config injector=""
+></config>
+<template>
+  <div class="rule">
+  </div>
+</template>
+<script type="text/javascript">
+  export default function(){
+    return {
+      scope : {
+        options : "=",
+      },
+      require : "ngModel",
+      link(scope, element, attr, ngModel){
+        let bars = [];
+        scope.$on("$destroy", (e) => {
+          console.log("destroyed:[row]!!");
+        });
+        function createBar(inx){
+          let bar = document.createElement("div");
+          bar.setAttribute("class", "bar");
+          bar.style.left = (inx - 0 + 1) / 12 * 100 + "%";
+          bar.onmousedown = onmousedown
+          function winmouseup(){
+            element[0].setAttribute("class", "rule")
+            bar.onmousedown = onmousedown;
+            for(let i = 0; i < 11; i++){
+              bars[i].onmouseover = null;
+              bars[i].onmouseout = null;
+            }
+          }
+          function onmousedown(){
+            let cls = bar.getAttribute("class");
+            element[0].setAttribute("class", "rule mousedown");
+            function removeAllAct(){
+              for(let i = 0; i < 11; i++){
+                bars[i].setAttribute("class", "bar");
+              }
+            }
+            if(cls.indexOf("active") != -1){
+              for(let i = 0; i < 11; i++){
+                bars[i].onmouseover = function(){
+                  let cols = [], stack = 0;
+                  removeAllAct();
+                  this.setAttribute("class", "bar active");
+                  for(var i = 0; i < bars.length; i++){
+                    if(bars[i].getAttribute("class").indexOf("active") != -1){
+                      cols.push(i - stack + 1);
+                      stack += i
+                    }
+                  }
+                  cols.push(11 - stack);
+                  ngModel.$setViewValue(ngModel.$viewValue.map((val, i) => {
+                    val.col = cols[i];
+                    return val;
+                  }));
+                  console.log( ngModel.$viewValue );
+                }
+              }
+            }
+            window.onmouseup = winmouseup
+          }
+          return bar;
+        }
+        for(let i = 0; i < 11; i++){
+          bars[i] = createBar(i);
+          element[0].appendChild(bars[i]);
+        }
+        ngModel.$formatters.push((val) => {
+          var inx = 0;
+          for(var i = 0; i<val.length; i++){
+            val[i].inx = inx += val[i].col;
+          };
+          return val;
+        });
+        ngModel.$parsers.push((val) => {
+          for(var i = 0; i<val.length; i++){
+            delete val[i].inx;
+          };
+          return val;
+        })
+        ngModel.$render = function(){
+          for(var i = 0; i < ngModel.$viewValue.length - 1; i++){
+            bars[ngModel.$viewValue[i].inx - 1].setAttribute("class", "bar active");
+          }
+        }
+      }
+    }
+  }
+</script>
+<style type="less">
+</style>

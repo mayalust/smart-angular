@@ -2,30 +2,50 @@
     injector="$scope,$q,$timeout"
 ></config>
 <template>
-  <free-board-preview
-      data-options="options">
-  </free-board-preview>
-  <free-board
-      data-options="options">
-  </free-board>
+  <div class="row">
+    <div class="col-xs-2">
+      <free-board-left
+          data-tools="tools">
+      </free-board-left>
+    </div>
+    <div class="col-xs-10">
+      <!--
+      <free-board-preview
+          data-options="options">
+      </free-board-preview>-->
+      <free-board
+          data-options="options">
+      </free-board>
+    </div>
+  </div>
 </template>
 <script type="text/javascript">
   export default function(scope,q,timeout){
+    scope.tools = [{
+      label : `输入框`,
+      data : {
+        type : `input`,
+        val : 9
+      }
+    }];
     scope.options = [{
       type : `row`,
       children : [{
         type : `col`,
         col : 3,
         children : [{
-          type : `input`
+          type : `input`,
+          val : 0
         },{
-          type : `input`
+          type : `input`,
+          val : 1
         }]
       },{
         type : `col`,
         col : 9,
         children : [{
-          type : `input`
+          type : `input`,
+          val : 2
         }]
       }]
     },{
@@ -34,11 +54,14 @@
         type : `col`,
         col : 9,
         children : [{
-          type : `input`
+          type : `input`,
+          val : 3
         },{
-          type : `input`
+          type : `input`,
+          val : 4
         },{
-          type : `input`
+          type : `input`,
+          val : 5
         }]
       },{
         type : `col`,

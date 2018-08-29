@@ -2,17 +2,16 @@
 ></config>
 <template>
   <div>
-    {{a}}
+    <div class="wrap">{{option.val}}</div>
   </div>
 </template>
 <script type="text/javascript">
   export default function(){
     return {
       scope : {
-        val : "="
+        option : "="
       },
       link(scope, element){
-        scope.a = parseInt(Math.random() * 100);
         scope.$on("$destroy", (e) => {
           console.log("destroyed:[ps-input]!!");
         })
@@ -20,5 +19,8 @@
     }
   }
 </script>
-<style type="less">
+<style type="less" scoped="true">
+  .wrap{
+    text-align : center;
+  }
 </style>

@@ -6,7 +6,7 @@
       let replacer = document.createComment(`移动节点`),
         helper = document.createElement(`div`),
         freeboard = document.getElementById(`freeboard`),
-        parent = dom.parentElement,
+        parent = dom && dom.parentElement,
         offset = [ 10 , 10 ];
       target.onmousedown = onmousedown;
       helper.setAttribute(`class`, `helper`);
@@ -14,17 +14,18 @@
         helper.style.top = `${y}px`;
         helper.style.left = `${x}px`;
       }
+      function clone(obj){
+        return JSON.parse(JSON.stringify(obj));
+      }
       function onmousedown(e){
-        if(dom){
-          parent.replaceChild(replacer, dom);
-          document.onmouseup = onmouseup;
-        }
-        freeboard.setAttribute(`class`, `mousedown`);
+        parent && parent.replaceChild(replacer, dom);
+        document.onmouseup = onmouseup;
+        rootScope.$broadcast(`freeboard:changed`)
         document.body.append(helper);
         setPos(e.pageX - offset[0], e.pageY - offset[1]);
         timeout(() => {
-          rootScope.$broadcast(`freeboard:changed`)
-        }, 300);
+          freeboard.setAttribute(`class`, `mousedown`);
+        });
         target.onmousedown = null;
         window.onmousemove = function(e){
           setPos(e.pageX - offset[0], e.pageY - offset[1]);
@@ -35,27 +36,37 @@
           let domtarget = e.target, list;
           if(domtarget.__isColEnd__ == true){
             list = domtarget.__parentList__;
-            psCommand.add([
-              psCommand.append(list, option),
-              psCommand.remove(parentList, parentList.indexOf(option))
-            ]);
+            if(parentList){
+              psCommand.add([
+                psCommand.remove(parentList, parentList.indexOf(option)),
+                psCommand.append(list, option)
+              ]);
+            } else {
+              psCommand.add([
+                psCommand.append(list, clone(option))
+              ]);
+            }
           } else if(domtarget.__isColHead__ == true){
             list = domtarget.__parentList__;
             inx = domtarget.__index__;
-            psCommand.insert([
-              psCommand.insert(list, option, inx),
-              psCommand.remove(parentList, parentList.indexOf(option))
-            ]);
+            if(parentList){
+              psCommand.insert([
+                psCommand.remove(parentList, parentList.indexOf(option)),
+                psCommand.insert(list, option, inx)
+              ]);
+            } else {
+              psCommand.insert([
+                psCommand.insert(list, clone(option), inx)
+              ]);
+            }
           }
-          if(dom){
-            parent.replaceChild(dom, replacer);
-            document.onmouseup = null;
-            target.onmousedown = onmousedown;
-          }
+          parent && parent.replaceChild(dom, replacer)
+          document.onmouseup = null;
+          target.onmousedown = onmousedown;
           freeboard.removeAttribute(`class`);
           timeout(() => {
             rootScope.$broadcast(`freeboard:changed`)
-          }, 300);
+          }, 200);
           helper.remove();
           window.onmousemove = null;
         });

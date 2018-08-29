@@ -102,9 +102,9 @@ module.exports = function (source,map) {
     },
     exprAttr = new RegExp(blank + "(\\w+)" + blank + "=" + blank + "\\\"" + "([^\"]*)" + "\\\"", "g");
   function scopedCss(css){
-    var styleExp = /^[\s\n]*([^\{]*\{[^\}]*\})[\s\n]*/g,
+    var styleExp = /^[\s\r\n]*([^{]*\{[^}]*\})[\r\s\n]*/g,
     rs = "", match;
-    while( match = styleExp.exec(css)){
+    while( styleExp.lastIndex = 0, match = styleExp.exec(css) ){
       rs += "[scoped-" + uid + "] " + match[1] + "\\n";
       css = css.substring(match[0].length);
     }
@@ -444,6 +444,7 @@ module.exports = function (source,map) {
           handler = exprCtrl["style"]["handler"],
           promise = handler(source, {type : "less"});
         promise.then(function(str){
+          console.log(str);
           fnStr += str;
           fnStr += `\nmodule.exports = {
             style : style

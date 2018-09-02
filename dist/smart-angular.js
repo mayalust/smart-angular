@@ -12,8 +12,9 @@
   const deps = require("./deps.js"),
     isArray = isType("Array"),
     slice = Array.prototype.slice,
-    tostring = Object.prototype.toString;
+    tostring = Object.prototype.toString,
     isUndefined = isType("Undefined"),
+    pHandler = propertiesHandler(),
     _tools = [
       'controllers',
       'directives'
@@ -60,15 +61,31 @@
       return obj;
     }
   }
-  function remapFunction(method, fn, temp, props){
+  function propertiesHandler(){
+    var props = {};
+    function add(name, value){
+      props[name] = value
+    }
+    function get(name){
+      return props[name]
+    }
+    function getAll(name){
+      return props
+    }
+    return {
+      add : add,
+      get : get,
+      getAll : getAll
+    }
+  }
+  function remapFunction(name, method, fn, temp, props){
     var m = null;
     switch(method){
       case "directive":
         return function(){
-          var args = [].slice.call(arguments),
-            p = typeof props === "function" ? [props.apply(null, args)] : [],
-            args = args.concat(p),
-            obj = fn.apply(null, args);
+          var args = [].slice.call(arguments), obj,
+          args = args.concat([props]);
+          obj = fn.apply(null, args);
           extend(obj, {
             template : temp || obj.template,
             restrict :  obj.restrict || "E",
@@ -94,9 +111,10 @@
         mtd = method === "service"
           ? ( type || "factory")
           : method,
-        fn = remapFunction(method, item[method], item.template, props),
+        fn = remapFunction(name, method, item[method], item.template, pHandler),
         p = str2Array(config.injector),
         params = p ? p.concat([fn]) : fn;
+      props ? pHandler.add(name, props()) : null;
       console.log(mtd, name, params);
       name
         ? module[mtd](name, params)

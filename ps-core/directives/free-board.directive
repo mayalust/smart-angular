@@ -32,7 +32,7 @@
         options : "="
       },
       link(scope, element, attr){
-        console.log(properties)
+        console.log(properties.getAll());
       }
     }
   }

@@ -69,13 +69,32 @@
     function get(name){
       return props[name]
     }
-    function getAll(name){
+    function getAllAttrs(name){
+      var obj = {};
+      for(var i = 0; i < props.length; i++){
+        for(var j in props[i]){
+          obj[j] = props[i][i]
+        }
+      }
+      return obj;
+    }
+    function getAttr(name, attr){
+      for(var i = 0; i < props.length; i++){
+        if(props[i][attr]){
+          return props[i][attr];
+        }
+      }
+      return null;
+    }
+    function getAll(){
       return props
     }
     return {
       add : add,
       get : get,
-      getAll : getAll
+      getAll : getAll,
+      getAttr : getAttr,
+      getAllAttrs : getAllAttrs
     }
   }
   function remapFunction(name, method, fn, temp, props){

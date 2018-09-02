@@ -31,8 +31,10 @@
   }
   function each(arr, callback){
     var i;
-    for(i = 0; i < arr.length; i++){
-      callback(arr[i], i, arr);
+    if(arr){
+      for(i = 0; i < arr.length; i++){
+        callback(arr[i], i, arr);
+      }
     }
   }
   function eachProp(obj, callback){
@@ -46,6 +48,9 @@
       a[i] = b[i];
     }
     return a;
+  }
+  function clone(obj){
+    return JSON.parse(JSON.stringify(obj));
   }
   function str2Array(obj){
     return isArray(obj) ? obj : ( obj ? [obj] : null);
@@ -67,27 +72,29 @@
       props[name] = value
     }
     function get(name){
-      return props[name]
+      return props[name] ? clone(props[name]) : null;
     }
     function getAllAttrs(name){
       var obj = {};
-      for(var i = 0; i < props.length; i++){
-        for(var j in props[i]){
-          obj[j] = props[i][i]
-        }
-      }
+      each(props[name], function(n){
+        eachProp(n.attributes, function(m, i){
+          obj[i] = m['value'] || m[2];
+        })
+      });
       return obj;
     }
     function getAttr(name, attr){
-      for(var i = 0; i < props.length; i++){
-        if(props[i][attr]){
-          return props[i][attr];
+      if(props[name]){
+        for(var i = 0; i < props[name].length; i++){
+          if(props[name].attributes[i][attr]){
+            return props[name].attributes[i][attr];
+          }
         }
       }
       return null;
     }
     function getAll(){
-      return props
+      return clone(props)
     }
     return {
       add : add,
@@ -103,7 +110,7 @@
       case "directive":
         return function(){
           var args = [].slice.call(arguments), obj,
-          args = args.concat([props]);
+            args = args.concat([props]);
           obj = fn.apply(null, args);
           extend(obj, {
             template : temp || obj.template,

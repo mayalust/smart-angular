@@ -2,7 +2,9 @@
 ></config>
 <template>
   <div>
-    <div class="wrap">{{option.val}}</div>
+    <div class="wrap">
+      <input ng-model="option.val" class="form-control"/>
+    </div>
   </div>
 </template>
 <script type="text/javascript">
@@ -12,15 +14,12 @@
         option : "="
       },
       link(scope, element){
-        scope.$on("$destroy", (e) => {
-          console.log("destroyed:[ps-input]!!");
-        })
+
       }
     }
   }
 </script>
 <style type="less" scoped="true">
   .wrap{
-    text-align : center;
   }
 </style>

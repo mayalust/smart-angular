@@ -13,7 +13,7 @@
     isArray = isType("Array"),
     slice = Array.prototype.slice,
     tostring = Object.prototype.toString;
-  let contexts = {}, module,
+  let contexts = {}, module, properties = {},
     isUndefined = isType("Undefined"),
     _tools = [
       'controllers',
@@ -61,12 +61,14 @@
       return obj;
     }
   }
-  function remapFunction(method, fn, temp){
+  function remapFunction(method, fn, temp, props){
     var m = null;
     switch(method){
       case "directive":
         return function(){
-          var obj = fn.apply(null, arguments);
+          var args = [].slice.call(arguments),
+            args = args.concat([props]),
+            obj = fn.apply(null, arguments);
           extend(obj, {
             template : temp || obj.template,
             restrict :  obj.restrict || "E",
@@ -91,7 +93,7 @@
         mtd = method === "service"
           ? ( type || "factory")
           : method,
-        fn = remapFunction(method, item[method], item.template),
+        fn = remapFunction(method, item[method], item.template, item.properties),
         p = str2Array(config.injector),
         params = p ? p.concat([fn]) : fn;
       console.log(mtd, name, params);
@@ -144,6 +146,14 @@
     inject(module, type, res);
     combinedCss += addCss(res);
   });
+  module.factory("freeboardComponents", [function(){
+    var factory = {
+      get : function(attr){
+        return properties[attr];
+      }
+    };
+    return factory;
+  }])
   renderCss(combinedCss);
   module.config([
     '$routeProvider', '$locationProvider',

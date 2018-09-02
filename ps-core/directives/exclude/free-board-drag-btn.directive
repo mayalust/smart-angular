@@ -1,0 +1,21 @@
+<config injector="$q,$compile,psDrag,$timeout"
+></config>
+<template>
+  <button class="btn-sm btn-primary" draggable="false">拖拽</button>
+</template>
+<script type="text/javascript">
+  export default function(q,compile,psDrag,timeout){
+    return {
+      scope : {
+        option : `=`
+      },
+      link(scope, element, attr){
+        timeout(function(){
+          psDrag(element[0], scope.option);
+        });
+      }
+    }
+  }
+</script>
+<style type="less">
+</style>

@@ -4,8 +4,16 @@ const js_beautify = require('js-beautify').js_beautify,
   less = require("less"),
   sass = require("sass"),
   babel = require("babel-core"),
+  loaderUtils = require("loader-utils"),
   CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split(''),
-  loaderUtils = require("loader-utils");
+  blank = "(?:[\\s\\n\\r])",
+  quate = "\\'(?:[^\\\'\\\\]|(?:\\\\\\'))*\\'|\\\"(?:[^\\\"\\\\]|(?:\\\\\\\"))*\\\"",
+  attrLike = blank + "+[\\w\\-$]+" + blank + "*=" + blank + "*(?:" + quate + ")",
+  ATTRS = "([\\w\\-$]+)" + blank + "*=" + blank + "*(" + quate + ")",
+  COMMONS = "\\<\\!\\--",
+  avaliableWord = "^" + blank + "*([^\\s\\n]|[^\\s\\n].*[^\\s\\n])" + blank + "*$",
+  TAG = "^" + blank + "*\\<" + blank + "*([\\w-$@]+)((?:" + attrLike + ")*)" + blank + "*(\\\/)?" + blank + "*\\>",
+  tagExp = new RegExp(TAG, "g");
 module.exports = function (source,map) {
   const option = loaderUtils.getOptions(this),
     templates = option.data;
@@ -31,6 +39,23 @@ module.exports = function (source,map) {
               : attr) + ";\n";
         }
       },
+      "properties" : {
+        regexp : tagExpr("properties"),
+        handler : function(source, attr){
+          let regex = /\<\s*script[^>]*\>((?:.|\n)*)\<\s*\/script\s*\>\s*$/g,
+            match = regex.exec(source),
+            options = {
+              presets : "es2015"
+            };
+          source = match ? match[1] : source;
+          try {
+            let codeObj = babel.transform(source, options);
+            return codeObj.code;
+          } catch(e){
+            return "throw new Error(\'" + e.message + "\');";
+          }
+        }
+      },
       "style" : {
         regexp : tagExpr("style"),
         handler : function(source, attr){
@@ -46,7 +71,7 @@ module.exports = function (source,map) {
                     : replaceAllReture(d.css);
                   res("var style = \"" + css + "\";\n")
                 }).catch(function(e){
-                  rej(e);
+                rej(e);
               })
             });
           } else if(attr && attr["type"] === "sass"){
@@ -103,7 +128,7 @@ module.exports = function (source,map) {
     exprAttr = new RegExp(blank + "(\\w+)" + blank + "=" + blank + "\\\"" + "([^\"]*)" + "\\\"", "g");
   function scopedCss(css){
     var styleExp = /^[\s\r\n]*([^{]*\{[^}]*\})[\r\s\n]*/g,
-    rs = "", match;
+      rs = "", match;
     while( styleExp.lastIndex = 0, match = styleExp.exec(css) ){
       rs += "[scoped-" + uid + "] " + match[1] + "\\n";
       css = css.substring(match[0].length);
@@ -269,13 +294,63 @@ module.exports = function (source,map) {
     }
     return rs;
   }
+  function tokenize(src){
+    var obj = {}, keys = [], depth = 0,
+      regexs = {
+      'head' : {
+        exp : tagExp,
+        handler : function(match){
+          if( depth == 0 ){
+            obj[match[1]] = obj[match[1]] || {};
+            obj[match[1]]['param'] = getAttr(match[2]);
+            obj[match[1]]['code'] = "";
+          }
+          keys.push(match[1]);
+          depth++;
+          return src.slice(match.index + match[0].length);
+        }
+      },
+      'end' : {
+        exp : function(str){
+          return new RegExp("\\<\\s*\\/\\s*(" + str + ")\\s*\\>")
+        },
+        handler : function(match){
+          depth--;
+          keys.pop();
+          if(depth){
+            obj[match[1]]['code'] += src.slice(0, match.index + match[0].length)
+          } else {
+            obj[match[1]]['code'] += src.slice(0, match.index)
+          }
+          return src.slice(match.index + match[0].length);
+        }
+      }
+    };
+    while(src){
+      let match, exp, handler;
+      for(var i in regexs){
+        exp = regexs[i]['exp'];
+        handler = regexs[i]['handler'];
+        exp = typeof exp === 'function' ? exp(keys[keys.length - 1]) : exp;
+        match = exp.exec(src);
+        if(match){
+          src = handler(match);
+          break;
+        }
+      }
+      if(!match){
+        break;
+      }
+    };
+    return obj;
+  }
   renderString = {
-    "template" : function(){
+    "template" : function(data){
       return new Promise(function(res, rej){
-        promises = mapObj(exprTemp, ( exp ) => {
+        promises = mapObj(exprTemp, ( exp, attr ) => {
           return new Promise(function(res, rej){
-            let match = exp["regexp"].exec(source),
-              val = exp["handler"](match[2], getAttr(match[1] || null));
+            let dt = data[attr],
+              val = dt ? exp["handler"](dt['code'], dt['param']) : null;
             if(val instanceof Promise){
               val.then((d) => {
                 res(d);
@@ -296,12 +371,16 @@ module.exports = function (source,map) {
         });
       })
     },
-    "controller" : function(){
+    "controller" : function(data){
       return new Promise(( res, rej ) => {
-        promises = mapObj(exprCtrl, ( exp ) => {
+        promises = mapObj(exprCtrl, ( exp, attr ) => {
           return new Promise(( res, rej ) => {
-            let match = exp["regexp"].exec(source),
-              val = exp["handler"](match[2], getAttr(match[1] || null));
+            let dt = data[attr],
+              val = dt ? exp["handler"](dt['code'], dt['param']) : null;
+            if(!dt){
+              console.log(attr);
+              //console.dir(data);
+            }
             if(val instanceof Promise){
               val.then((d) => {
                 res(d);
@@ -330,12 +409,12 @@ module.exports = function (source,map) {
         });
       });
     },
-    "service" : function(){
+    "service" : function(data){
       return new Promise(( res, rej ) => {
-        promises = mapObj(exprCtrl, ( exp ) => {
+        promises = mapObj(exprCtrl, ( exp, attr) => {
           return new Promise(( res, rej ) => {
-            let match = exp["regexp"].exec(source),
-              val = exp["handler"](match ? match[2] : null, match ? getAttr(match[1] || null) : null);
+            let dt = data[attr],
+              val = dt ? exp["handler"](dt['code'], dt['param']) : null;
             if(val instanceof Promise){
               val.then((d) => {
                 res(d);
@@ -362,12 +441,12 @@ module.exports = function (source,map) {
         });
       });
     },
-    "directive" : function(){
+    "directive" : function(data){
       return new Promise(( res, rej ) => {
-        promises = mapObj(exprCtrl, ( exp ) => {
+        promises = mapObj(exprCtrl, ( exp, attr) => {
           return new Promise(( res, rej ) => {
-            let match = exp["regexp"].exec(source),
-              val = exp["handler"](match[2], getAttr(match[1] || null));
+            let dt = data[attr],
+              val = dt ? exp["handler"](dt['code'], dt['param']) : null;
             if(val instanceof Promise){
               val.then((d) => {
                 res(d);
@@ -384,6 +463,7 @@ module.exports = function (source,map) {
           fnStr += arr.join("");
           fnStr += `\nmodule.exports = {
             name : \"${alias}\",
+            properties : exports[0],
             config : config,
             template : template,
             style : style,
@@ -396,12 +476,12 @@ module.exports = function (source,map) {
         });
       });
     },
-    "filter" : function(){
+    "filter" : function(data){
       return new Promise(( res, rej ) => {
-        promises = mapObj(exprCtrl, ( exp ) => {
+        promises = mapObj(exprCtrl, ( exp, attr) => {
           return new Promise(( res, rej ) => {
-            let match = exp["regexp"].exec(source),
-              val = exp["handler"](match ? match[2] : null, match ? getAttr(match[1] || null) : null);
+            let dt = data[attr],
+              val = dt ? exp["handler"](dt['code'], dt['param']) : null;
             if(val instanceof Promise){
               val.then((d) => {
                 res(d);
@@ -434,7 +514,7 @@ module.exports = function (source,map) {
         fnStr += handler(source);
         fnStr += `\nmodule.exports = {
           style : style
-        }`
+        }`;
         res(fnStr);
       });
     },
@@ -444,7 +524,6 @@ module.exports = function (source,map) {
           handler = exprCtrl["style"]["handler"],
           promise = handler(source, {type : "less"});
         promise.then(function(str){
-          console.log(str);
           fnStr += str;
           fnStr += `\nmodule.exports = {
             style : style
@@ -468,9 +547,9 @@ module.exports = function (source,map) {
       });
     }
   }
-  renderString[type]().then( (d) => {
-      callback(null, js_beautify(d), map);
-    }).catch((e) => {
+  renderString[type](tokenize(source)).then( (d) => {
+    callback(null, js_beautify(d), map);
+  }).catch((e) => {
     console.error(e);
   });
   return;

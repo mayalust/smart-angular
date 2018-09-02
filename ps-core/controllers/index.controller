@@ -3,19 +3,21 @@
 ></config>
 <template>
   <div class="row">
-    <div class="col-xs-2">
+    <div class="leftpart">
       <free-board-left
           data-tools="tools">
       </free-board-left>
     </div>
-    <div class="col-xs-10">
+    <div class="rightpart">
       <!--
       <free-board-preview
           data-options="options">
       </free-board-preview>-->
-      <free-board
-          data-options="options">
-      </free-board>
+      <div class="free-board-wrap">
+        <free-board
+            data-options="options">
+        </free-board>
+      </div>
     </div>
   </div>
 </template>
@@ -77,4 +79,27 @@
   };
 </script>
 <style type="less">
+  .leftpart{
+    position : absolute;
+    width : 250px;
+    top : 0;
+    bottom : 0;
+    left : 0;
+  }
+  .rightpart{
+    position : absolute;
+    right : 0;
+    top : 30px;
+    bottom : 0;
+    left : 250px;
+    overflow-x : hidden;
+    overflow-y : auto;
+    .free-board-wrap{
+      position : absolute;
+      width : ~'calc( 100vw - 265px )';
+      top : 0;
+      bottom : 0;
+      left : 0;
+    }
+  }
 </style>

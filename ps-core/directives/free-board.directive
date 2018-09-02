@@ -14,6 +14,16 @@
     </div>
   </div>
 </template>
+<properties>
+  <script type="text/javascript">
+    function properties(){
+      return [{
+        a : 10
+      }];
+    }
+    export { properties };
+  </script>
+</properties>
 <script type="text/javascript">
   export default function(q, compile, timeout){
     return {

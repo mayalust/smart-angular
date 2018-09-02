@@ -1,0 +1,80 @@
+<config injector="$q,$compile,psDrag"
+></config>
+<template>
+  <div>
+    <div class="whole">
+      <div class="title">栅格系统</div>
+      <free-board-col-select ng-model="colData"></free-board-col-select>
+      <div class="item">
+        <span>栅格</span>
+        <free-board-drag-btn data-option="colData"></free-board-drag-btn>
+      </div>
+      <div class="title">常用组件</div>
+      <div ng-repeat="op in tools" class="item">
+        <span ng-bind="op.label"></span>
+        <free-board-drag-btn data-option="op.data"></free-board-drag-btn>
+      </div>
+    </div>
+  </div>
+</template>
+<script type="text/javascript">
+  export default function(q,compile,psDrag){
+    return {
+      scope : {
+        tools : `=`
+      },
+      link(scope, element, attr){
+        scope.colData = {
+          type : `row`,
+          children : [{
+            type : `col`,
+            col : 6,
+            children : []
+          },{
+            type : `col`,
+            col : 6,
+            children : []
+          }]
+        }
+      }
+    }
+  }
+</script>
+<style type="less" scoped="true">
+  .whole {
+    -webkit-user-select:none;
+    -moz-user-select:none;
+    -ms-user-select:none;
+    user-select:none;
+    position : absolute;
+    left : 0;
+    top : 30px;
+    text-align : left;
+    bottom : 0;
+    right : 0;
+    background-color : #eee;
+    border-right : 1px dashed #aaa;
+    .title {
+      width : 100%;
+      background-color : #337ab7;
+      border-bottom : 1px solid #666;
+      color : #fff;
+    }
+    .item {
+      line-height : 30px;
+      padding : 5px 5px 5px 15px;
+      background-color : #ddd;
+      margin : 5px;
+      border : 1px dashed #ccc;
+      &:after{
+        content : "";
+        display : block;
+        height : 1px;
+        clear : both;
+      }
+    }
+    .btn-sm{
+      float : right;
+    }
+  }
+</style>

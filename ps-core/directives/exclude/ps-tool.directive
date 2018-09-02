@@ -24,16 +24,19 @@
           target.appendChild(dom);
           compile(dom)(scope);
         }
-        let iteminner = document.createElement(`div`);
+        let iteminner = document.createElement(`div`),
           el = document.createElement(`ps-${scope.option.type}`),
+          option = document.createElement(`div`);
           head = document.createElement(`div`);
           colHead = document.createElement(`col-head`);
         colHead.setAttribute(`data-option`, `option`);
         colHead.setAttribute(`data-parent-list`, `parentList`);
         iteminner.setAttribute(`class`,`item-inner`);
         head.setAttribute(`class`, `header`);
+        option.setAttribute(`class`, `option`);
         el.setAttribute(`data-option`, `option`);
         psDrag(head, scope.option, scope.parentList, element[0]);
+        head.appendChild(option);
         iteminner.appendChild(head);
         iteminner.appendChild(el);
         $append(tar, colHead);

@@ -67,7 +67,7 @@
         return function(){
           var args = [].slice.call(arguments),
             args = args.concat([props]),
-            obj = fn.apply(null, arguments);
+            obj = fn.apply(null, args);
           extend(obj, {
             template : temp || obj.template,
             restrict :  obj.restrict || "E",

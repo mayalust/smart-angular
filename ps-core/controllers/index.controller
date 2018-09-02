@@ -3,16 +3,7 @@
 ></config>
 <template>
   <div class="row">
-    <div class="leftpart">
-      <free-board-left
-          data-tools="tools">
-      </free-board-left>
-    </div>
     <div class="rightpart">
-      <!--
-      <free-board-preview
-          data-options="options">
-      </free-board-preview>-->
       <div class="free-board-wrap">
         <free-board
             data-options="options">

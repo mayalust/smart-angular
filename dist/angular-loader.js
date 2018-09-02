@@ -463,7 +463,7 @@ module.exports = function (source,map) {
           fnStr += arr.join("");
           fnStr += `\nmodule.exports = {
             name : \"${alias}\",
-            properties : exports[0],
+            properties : exports.properties,
             config : config,
             template : template,
             style : style,

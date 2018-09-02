@@ -25,14 +25,14 @@
   </script>
 </properties>
 <script type="text/javascript">
-  export default function(q, compile, timeout){
+  export default function(q, compile,timeout,properties){
     return {
       scope : {
         preview : "=",
         options : "="
       },
       link(scope, element, attr){
-        console.log(arguments)
+        console.log(properties)
       }
     }
   }

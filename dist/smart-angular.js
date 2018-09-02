@@ -66,7 +66,8 @@
       case "directive":
         return function(){
           var args = [].slice.call(arguments),
-            args = args.concat([props]),
+            p = typeof props === "function" ? [props.apply(null, args)] : [],
+            args = args.concat(p),
             obj = fn.apply(null, args);
           extend(obj, {
             template : temp || obj.template,
@@ -89,7 +90,7 @@
       var name = item.config.name || item.name,
         config = item.config,
         type = config.type,
-        props = config.properties || [],
+        props = item.properties,
         mtd = method === "service"
           ? ( type || "factory")
           : method,

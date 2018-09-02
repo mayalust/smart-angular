@@ -13,7 +13,6 @@
     isArray = isType("Array"),
     slice = Array.prototype.slice,
     tostring = Object.prototype.toString;
-  let contexts = {}, module, properties = {},
     isUndefined = isType("Undefined"),
     _tools = [
       'controllers',
@@ -90,10 +89,11 @@
       var name = item.config.name || item.name,
         config = item.config,
         type = config.type,
+        props = config.properties || [],
         mtd = method === "service"
           ? ( type || "factory")
           : method,
-        fn = remapFunction(method, item[method], item.template, item.properties),
+        fn = remapFunction(method, item[method], item.template, props),
         p = str2Array(config.injector),
         params = p ? p.concat([fn]) : fn;
       console.log(mtd, name, params);
@@ -146,14 +146,6 @@
     inject(module, type, res);
     combinedCss += addCss(res);
   });
-  module.factory("freeboardComponents", [function(){
-    var factory = {
-      get : function(attr){
-        return properties[attr];
-      }
-    };
-    return factory;
-  }])
   renderCss(combinedCss);
   module.config([
     '$routeProvider', '$locationProvider',

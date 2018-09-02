@@ -143,9 +143,11 @@ function extend(a, b){
 function check(str, exclude){
   let rs;
   if(exclude instanceof RegExp){
+    exclude.lastIndex = 0;
     rs = exclude ? !exclude.test(str) : true
   } else if( exclude instanceof Array ){
     rs = !some(exclude, function(exd){
+      exd.lastIndex = 0;
       return exd ? exd.test(str) : true
     })
   } else {
@@ -247,8 +249,10 @@ function makeEntryFile(config, name){
           });
         }
         recursive(root, (nd) => {
-          ( nd.ext === ".css" || nd.ext === ".less" || nd.ext === "." + n ) && check(nd.abspath, exclude)?
-            arr.push(nd.abspath) : null;
+          ( nd.ext === ".css" || nd.ext === ".less" || nd.ext === "." + n )
+          && check(nd.abspath, exclude)
+            ? arr.push(nd.abspath)
+            : null;
         });
         res(arr);
         obj[n] = arr;

@@ -476,6 +476,41 @@ module.exports = function (source,map) {
         });
       });
     },
+    "component" : function(data){
+      return new Promise(( res, rej ) => {
+        promises = mapObj(exprCtrl, ( exp, attr) => {
+          return new Promise(( res, rej ) => {
+            let dt = data[attr],
+              val = dt ? exp["handler"](dt['code'], dt['param']) : null;
+            if(val instanceof Promise){
+              val.then((d) => {
+                res(d);
+              }).catch((e) => {
+                rej(e)
+              })
+            } else {
+              res(val);
+            }
+          })
+        });
+        Promise.all(promises).then((arr) => {
+          let fnStr = "";
+          fnStr += arr.join("");
+          fnStr += `\nmodule.exports = {
+            name : \"${alias}\",
+            properties : exports.properties,
+            config : config,
+            template : template,
+            style : style,
+            ${type} : exports.default || module.exports
+          }`;
+          res(fnStr);
+        }).catch((e) => {
+          console.error(e);
+          rej(e);
+        });
+      });
+    },
     "filter" : function(data){
       return new Promise(( res, rej ) => {
         promises = mapObj(exprCtrl, ( exp, attr) => {

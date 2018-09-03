@@ -4,7 +4,7 @@ const webpack = require("webpack"),
   beautify = require('js-beautify').js_beautify,
   pathLib = require("path"),
   Filetree = require(pathLib.join(__dirname, "./filetree.js")),
-  _contain = ["controller", "directive", "service", "filter", "style"],
+  _contain = ["controller", "directive", "component","service", "filter", "style"],
   _templates = {},
   _deps = "./deps.js",
   _workpath = pathLib.resolve(process.cwd()),
@@ -29,6 +29,16 @@ const webpack = require("webpack"),
             loader : pathLib.resolve(__dirname, "./angular-loader.js"),
             options : {
               type : "directive",
+              data : _templates
+            }
+          }
+        },
+        {
+          test: /\.component/,
+          use: {
+            loader : pathLib.resolve(__dirname, "./angular-loader.js"),
+            options : {
+              type : "component",
               data : _templates
             }
           }
@@ -233,7 +243,7 @@ function makeTemplates(config){
   })
 }
 function makeEntryFile(config, name){
-  let obj = {};
+  let obj = {},comptree = {};
   return Promise.all(_contain.map((n) => {
     let pa = config[n + "s"],
       exclude = typeof pa === "object" ? pa.exclude : null,
@@ -248,12 +258,26 @@ function makeEntryFile(config, name){
             recursive(nd, callback);
           });
         }
+        function recursiveMap(node, target){
+          target.name = node.name;
+          target.abspath = node.abspath;
+          target.ext = node.ext;
+          node.children ? (target.children = []) : null;
+          each(node.children, (nd) => {
+            target.children.push(recursiveMap(nd, {}));
+          });
+          return target;
+        }
         recursive(root, (nd) => {
           ( nd.ext === ".css" || nd.ext === ".less" || nd.ext === "." + n )
           && check(nd.abspath, exclude)
             ? arr.push(nd.abspath)
             : null;
         });
+        if(n === "component"){
+          comptree = recursiveMap(root, comptree);
+          console.log(comptree);
+        }
         res(arr);
         obj[n] = arr;
       });
@@ -275,6 +299,7 @@ function makeEntryFile(config, name){
             return "deps[\"tools\"][\"" + i + "\"].push(require(\"" + normalize(p) + "\"));";
           }).join("");
         }),
+        str += "deps[\"comptree\"] = " + (comptree ? JSON.stringify(comptree) : "null"),
         str += "module.exports = deps;",
         beautify(str)
     );

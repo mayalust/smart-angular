@@ -19,6 +19,7 @@
       'controllers',
       'directives'
     ];
+  let comptree = deps['comptree'];
   function isType(type){
     return function(obj){
       return tostring.call(obj) === "[object " + type + "]";
@@ -104,7 +105,7 @@
       getAllAttrs : getAllAttrs
     }
   }
-  function remapFunction(name, method, fn, temp, props){
+  function remapFunction(name, method, fn, temp, props, comptree){
     var m = null;
     switch(method){
       case "directive":
@@ -121,7 +122,11 @@
         }
         break;
       default :
-        return fn;
+        return function(){
+          var args = [].slice.call(arguments);
+          args.push(comptree);
+          return fn.apply(this, args);
+        }
         break;
     }
   }
@@ -137,7 +142,7 @@
         mtd = method === "service"
           ? ( type || "factory")
           : method,
-        fn = remapFunction(name, method, item[method], item.template, pHandler),
+        fn = remapFunction(name, method, item[method], item.template, pHandler, comptree),
         p = str2Array(config.injector),
         params = p ? p.concat([fn]) : fn;
       props ? pHandler.add(name, props()) : null;

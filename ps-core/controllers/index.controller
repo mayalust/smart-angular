@@ -13,7 +13,7 @@
   </div>
 </template>
 <script type="text/javascript">
-  export default function(scope,q,timeout){
+  export default function(scope,q,timeout,comptree){
     scope.tools = [{
       label : `输入框`,
       data : {
@@ -62,11 +62,7 @@
         children : []
       }]
     }];
-    /**
-    timeout(function(){
-      scope.options[1].children[0].children.splice(0,1);
-    }, 3000)
-     */
+    console.log(comptree);
   };
 </script>
 <style type="less">

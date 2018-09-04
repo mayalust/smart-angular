@@ -136,13 +136,14 @@
         return;
       }
       var name = item.config.name || item.name,
+        md = method === "component" ? "directive" : method,
         config = item.config,
         type = config.type,
         props = item.properties,
-        mtd = method === "service"
+        mtd = md === "service"
           ? ( type || "factory")
-          : method,
-        fn = remapFunction(name, method, item[method], item.template, pHandler, comptree),
+          : md,
+        fn = remapFunction(name, md, item[method], item.template, pHandler, comptree),
         p = str2Array(config.injector),
         params = p ? p.concat([fn]) : fn;
       props ? pHandler.add(name, props()) : null;

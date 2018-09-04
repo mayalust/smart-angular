@@ -9,24 +9,11 @@
   <script src="<%= output %>"></script>
   <link type="text/css" rel="stylesheet" href="<%= bootstrap %>" />
   <link type="text/css" rel="stylesheet" href="<%= dataTable %>" />
-  <style type="text/css">
-    * {
-      padding : 0;
-      margin : 0;
-    }
-    .title{
-      text-align : center;
-      color : white;
-      background-color : black;
-      line-height : 30px;
-    }
-  </style>
 </head>
 <body>
-  <div class="title">Smart Angular 测试页面</div>
   <div ng-view></div>
   <script type="text/javascript">
-    angular.bootstrap(document.body, ["<%= name %>"]);
+    angular.bootstrap(document.body, [smartAngular.name]);
   </script>
 </body>
 </html>

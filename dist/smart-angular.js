@@ -111,7 +111,7 @@
       case "directive":
         return function(){
           var args = [].slice.call(arguments), obj,
-            args = args.concat([props]);
+            args = args.concat([props, comptree]);
           obj = fn.apply(null, args);
           extend(obj, {
             template : temp || obj.template,

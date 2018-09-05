@@ -71,17 +71,15 @@
     window[`__freeboardProperties__`] = window[`__freeboardProperties__`] || {};
     function add(name, value){
       window[`__freeboardProperties__`][name] = value;
-      debugger;
       console.log(window[`__freeboardProperties__`]);
     }
     function get(name){
       var props = window[`__freeboardProperties__`];
-      debugger;
       return props[name] ? clone(props[name]) : null;
     }
     function getAllAttrs(name){
       var obj = {};
-      each(props[name], function(n){
+      each(window[`__freeboardProperties__`][name], function(n){
         eachProp(n.attributes, function(m, i){
           obj[i] = m['value'] || m[2];
         })

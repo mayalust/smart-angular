@@ -68,12 +68,12 @@
     }
   }
   function propertiesHandler(){
-    var props = {};
+    window[`__freeboardProperties__`] = {};
     function add(name, value){
-      props[name] = value
+      window[`__freeboardProperties__`][name] = value
     }
     function get(name){
-      return props[name] ? clone(props[name]) : null;
+      return props[name] ? clone(window[`__freeboardProperties__`][name]) : null;
     }
     function getAllAttrs(name){
       var obj = {};
@@ -85,6 +85,7 @@
       return obj;
     }
     function getAttr(name, attr){
+      var prop = window[`__freeboardProperties__`];
       if(props[name]){
         for(var i = 0; i < props[name].length; i++){
           if(props[name].attributes[i][attr]){
@@ -95,7 +96,7 @@
       return null;
     }
     function getAll(){
-      return clone(props)
+      return clone(window[`__freeboardProperties__`])
     }
     return {
       add : add,

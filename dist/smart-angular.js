@@ -70,11 +70,14 @@
   function propertiesHandler(){
     window[`__freeboardProperties__`] = window[`__freeboardProperties__`] || {};
     function add(name, value){
-      window[`__freeboardProperties__`][name] = value
+      window[`__freeboardProperties__`][name] = value;
+      debugger;
+      console.log(window[`__freeboardProperties__`]);
     }
     function get(name){
-      var prop = window[`__freeboardProperties__`];
-      return props[name] ? clone(prop[name]) : null;
+      var props = window[`__freeboardProperties__`];
+      debugger;
+      return props[name] ? clone(props[name]) : null;
     }
     function getAllAttrs(name){
       var obj = {};
@@ -86,7 +89,7 @@
       return obj;
     }
     function getAttr(name, attr){
-      var prop = window[`__freeboardProperties__`];
+      var props = window[`__freeboardProperties__`];
       if(props[name]){
         for(var i = 0; i < props[name].length; i++){
           if(props[name].attributes[i][attr]){

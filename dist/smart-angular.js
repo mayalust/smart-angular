@@ -68,12 +68,13 @@
     }
   }
   function propertiesHandler(){
-    window[`__freeboardProperties__`] = {};
+    window[`__freeboardProperties__`] = window[`__freeboardProperties__`] || {};
     function add(name, value){
       window[`__freeboardProperties__`][name] = value
     }
     function get(name){
-      return props[name] ? clone(window[`__freeboardProperties__`][name]) : null;
+      var prop = window[`__freeboardProperties__`];
+      return props[name] ? clone(prop[name]) : null;
     }
     function getAllAttrs(name){
       var obj = {};

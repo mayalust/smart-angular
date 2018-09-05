@@ -173,7 +173,7 @@ class FileTree {
     let item = new Node(parentNode || this),
       dir = pathLib.join(this.rootpath, path),
       basename = pathLib.basename(dir),
-      nameExp = /([\w]+)(?:\.[\w]+)?/g,
+      nameExp = /([\w-@$#%()]+)(?:\.[\w]+)?/g,
       name = nameExp.exec(basename);
     extend(item, {
       rootpath : this.rootpath,

@@ -206,9 +206,10 @@
     function($routeProvider, $locationProvider) {
       var controllers = deps["tools"]["controller"], defaultRouter;
       eachProp(controllers, function(ctrl, i){
-        var router = ctrl.config.router || ctrl.name;
+        var router = ctrl.config.router || ctrl.name,
+          params = ctrl.config.params;
         defaultRouter = defaultRouter || (ctrl.config.defaultRouter ? router : null)
-        $routeProvider.when("/" + router, {
+        $routeProvider.when("/" + router + params, {
           template : ctrl.template,
           controller: ctrl.config.name || ctrl.name
         })

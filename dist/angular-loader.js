@@ -42,7 +42,7 @@ module.exports = function (source,map) {
       "properties" : {
         regexp : tagExpr("properties"),
         handler : function(source, attr){
-          let regex = /\<\s*script[^>]*\>((?:.|\n)*)\<\s*\/script\s*\>\s*$/g,
+          let regex = /\<\s*script[^>]*\>((?:.|[\n\r])*)\<\s*\/script\s*\>\s*$/g,
             match = regex.exec(source),
             options = {
               presets : "es2015"

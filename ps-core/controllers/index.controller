@@ -2,67 +2,13 @@
     injector="$scope,$q,$timeout"
 ></config>
 <template>
-  <div class="row">
-    <div class="rightpart">
-      <div class="free-board-wrap">
-        <free-board
-            data-options="options">
-        </free-board>
-      </div>
-    </div>
+  <div>
+    <c-test></c-test>
   </div>
 </template>
 <script type="text/javascript">
   export default function(scope,q,timeout,comptree){
-    scope.tools = [{
-      label : `输入框`,
-      data : {
-        type : `input`,
-        val : 9
-      }
-    }];
-    scope.options = [{
-      type : `row`,
-      children : [{
-        type : `col`,
-        col : 3,
-        children : [{
-          type : `input`,
-          val : 0
-        },{
-          type : `input`,
-          val : 1
-        }]
-      },{
-        type : `col`,
-        col : 9,
-        children : [{
-          type : `input`,
-          val : 2
-        }]
-      }]
-    },{
-      type : `row`,
-      children : [{
-        type : `col`,
-        col : 9,
-        children : [{
-          type : `input`,
-          val : 3
-        },{
-          type : `input`,
-          val : 4
-        },{
-          type : `input`,
-          val : 5
-        }]
-      },{
-        type : `col`,
-        col : 3,
-        children : []
-      }]
-    }];
-    console.log(comptree);
+
   };
 </script>
 <style type="less">

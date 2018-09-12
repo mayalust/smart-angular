@@ -70,35 +70,56 @@
   function propertiesHandler(){
     window[`__freeboardProperties__`] = window[`__freeboardProperties__`] || {};
     function add(name, value){
-      window[`__freeboardProperties__`][name] = value;
-      console.log(window[`__freeboardProperties__`]);
-    }
-    function get(name){
-      var props = window[`__freeboardProperties__`];
-      return props[name] ? clone(props[name]) : null;
-    }
-    function getAllAttrs(name){
-      var obj = {};
-      each(window[`__freeboardProperties__`][name], function(n){
-        eachProp(n.attributes, function(m, i){
-          obj[i] = m['value'] || m[2];
-        })
-      });
-      return obj;
-    }
-    function getAttr(name, attr){
-      var props = window[`__freeboardProperties__`];
-      if(props[name]){
-        for(var i = 0; i < props[name].length; i++){
-          if(props[name].attributes[i][attr]){
-            return props[name].attributes[i][attr];
-          }
+      if(!window[`__freeboardProperties__`][name] ){
+        window[`__freeboardProperties__`][name] = value;
+        if(value.then){
+          value.then(function(d){
+            window[`__freeboardProperties__`] = d;
+          })
         }
       }
-      return null;
+    }
+    function get(name, callback){
+      var props = window[`__freeboardProperties__`];
+      if(props[name]){
+        if(props[name].then){
+          props[name].then(function(n){
+            callback && callback(clone(n));
+          })
+        } else {
+          callback && callback(props[name]);
+        }
+      } else {
+        callback && callback(null)
+      }
+    }
+    function getAllAttrs(name, callback){
+      var obj = {};
+      get(name, function(p){
+        each(p, function(n){
+          eachProp(n.attributes, function(m, i){
+            obj[i] = m['value'] || m[2];
+          })
+        });
+        callback && callback(obj);
+      });
+    }
+    function getAttr(name, attr, callback){
+      get(name, function(props){
+        for(var i = 0; i < props.length; i++){
+          var p = props[i];
+          for(var j in p.attributes){
+            if(p.attributes[attr]){
+              callback && callback(p.attributes[attr]);
+              return
+            }
+          }
+        };
+        callback && callback(null);
+      });
     }
     function getAll(){
-      return clone(window[`__freeboardProperties__`])
+      return window[`__freeboardProperties__`]
     }
     return {
       add : add,
@@ -114,7 +135,10 @@
       case "directive":
         return function(){
           var args = [].slice.call(arguments), obj,
-            args = args.concat([props, comptree]);
+            args = args.concat([pHandler, comptree]);
+          if(!pHandler.get(name)){
+            pHandler.add(name, props.apply(null, arguments))
+          }
           obj = fn.apply(null, args);
           extend(obj, {
             template : temp || obj.template,
@@ -146,10 +170,10 @@
         mtd = md === "service"
           ? ( type || "factory")
           : md,
-        fn = remapFunction(name, md, item[method], item.template, pHandler, comptree),
+        fn = remapFunction(name, md, item[method], item.template, props, comptree),
         p = str2Array(config.injector),
         params = p ? p.concat([fn]) : fn;
-      props ? pHandler.add(name, props()) : null;
+      //props ? pHandler.add(name, props()) : null;
       console.log(mtd, name, params);
       name
         ? module[mtd](name, params)

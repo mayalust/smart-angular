@@ -136,7 +136,7 @@
         return function(){
           var args = [].slice.call(arguments), obj,
             args = args.concat([pHandler, comptree]);
-          if(!pHandler.get(name)){
+          if(!pHandler.get(name) && props){
             pHandler.add(name, props.apply(null, arguments))
           }
           obj = fn.apply(null, args);

@@ -8,7 +8,7 @@ const express = require(`express`),
   middlewares = [webpackAngular];
 function webpackAngular(req, res, next){
   var regAng = /(.*)\.angular(?:\.js)?/g, match = regAng.exec(req.url);
-  match ? compiler.pack(name).then((d) => {
+  match ? compiler.pack(sAn.name).then((d) => {
     res.setHeader(`Content-Type`, `application/javascript; charset=UTF-8`);
     fs.readFile(pathLib.join(process.cwd(),match[1] + `.js`), function(err, d){
       err
@@ -18,23 +18,19 @@ function webpackAngular(req, res, next){
     })
   }) : next();
 }
+function each(arr, callback){
+  let i = 0;
+  if(arr){
+    for(; i < arr.length; i++){
+      callback(arr[i], i, arr);
+    }
+  }
+}
 function use(plugin){
   plugin.install(sAn);
 }
 function run(name, devapp){
   let port = 9000;
-  function webpackAngular(req, res, next){
-    var regAng = /(.*)\.angular(?:\.js)?/g, match = regAng.exec(req.url);
-    match ? compiler.pack(name).then((d) => {
-      res.setHeader(`Content-Type`, `application/javascript; charset=UTF-8`);
-      fs.readFile(pathLib.join(process.cwd(),match[1] + `.js`), function(err, d){
-        err
-          ? res.write(JSON.stringify(err))
-          : res.write(d);
-        res.end();
-      })
-    }) : next();
-  }
   function checkPortAvaliable(port, callback){
     new Promise((res,rej) => {
       let server = net.createServer();
@@ -58,6 +54,7 @@ function run(name, devapp){
       checkPortAvaliable(port - 0 + 1, callback);
     })
   }
+  sAn.name = name;
   if(devapp){
     sAn.eachMiddleware((middleware)=>{
       devapp.use(middleware);
@@ -99,9 +96,7 @@ class smartAngular {
     this.middlewares.push(fn);
   }
   eachMiddleware(callback){
-    for(var i = 0; i < this.middlewares.length; i++){
-      callback(this.middlewares[i], i, this.middlewares);
-    }
+    each( this.middlewares, callback );
   }
 }
 let sAn = new smartAngular(middlewares);

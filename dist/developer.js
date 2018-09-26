@@ -59,6 +59,7 @@ function run(name, devapp){
     sAn.eachMiddleware((middleware)=>{
       devapp.use(middleware);
     });
+    return devapp;
   } else {
     app.set(`views`,pathLib.join(__dirname , `views`) );
     app.engine(`.html`, require('ejs').__express);
@@ -86,6 +87,7 @@ function run(name, devapp){
         console.error(err.message);
       });
     });
+    return app;
   }
 }
 class smartAngular {

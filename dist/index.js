@@ -10,8 +10,7 @@ function run(cmd, name){
       compiler.init(name);
       break
     case "dev":
-      developer.run(name);
-      break;
+      return developer.run(name);
     case "webpackdev" :
       return function(app){
         developer.run(name, app);

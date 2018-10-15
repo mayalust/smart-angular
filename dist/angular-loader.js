@@ -16,7 +16,7 @@ const js_beautify = require('js-beautify').js_beautify,
   tagExp = new RegExp(TAG, "g");
 module.exports = function (source,map) {
   const option = loaderUtils.getOptions(this),
-    templates = option.data;
+    templates = JSON.parse(JSON.stringify(option.data));
   this.cacheable(true);
   let type = option.type,
     alias = switchName(pathLib.basename(this.resourcePath)),

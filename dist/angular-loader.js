@@ -169,47 +169,47 @@ module.exports = function (source,map) {
     if(json instanceof Array){
       for(var i = 0; i < json.length; i++){
         recursive(json[i], callback, {
-          children : json
+          childNodes : json
         });
       }
     } else {
       callback && callback(json, parent || null);
-      if(json.children){
-        for(var i = 0; i < json.children.length; i++){
-          recursive(json.children[i], callback, json);
+      if(json.childNodes){
+        for(var i = 0; i < json.childNodes.length; i++){
+          recursive(json.childNodes[i], callback, json);
         }
       }
     }
   }
   function prerender(str){
     var json = templateLib.html2json(str),s, cls;
-    if(json.children > 1){
+    if(json.childNodes > 1){
       console.error("错误：模版节点，产生了多于1个根节点。");
       return null;
     }
     recursive(json, function(node, parent){
       var children, inx,
-        template = templates[node.localName];
+        template = templates[node.nodeName.toLowerCase()];
       if(template){
-        children = node.children;
-        inx = parent.children.indexOf(node);
-        [].splice.apply(parent.children, [inx, template.length].concat(template));
+        children = node.childNodes;
+        inx = parent.childNodes.indexOf(node);
+        [].splice.apply(parent.childNodes, [inx, template.length].concat(template));
         recursive(template, function(n, parent){
-          if(n.localName === "slot"){
-            inx = parent.children.indexOf(n);
-            [].splice.apply(parent.children, [inx, children.length].concat(children));
+          if(n.nodeName === "SLOT"){
+            inx = parent.childNodes.indexOf(n);
+            [].splice.apply(parent.childNodes, [inx, 1].concat(children));
           }
         })
       }
     });
-    if(json.children && json.children.length > 0){
-      if(!json.children[0]){
+    if(json.childNodes && json.childNodes.length > 0){
+      if(!json.childNodes[0]){
         console.error("json.children[0] is undefined");
         console.dir(json);
       }
-      json.children[0].params = json.children[0].params || {};
+      json.childNodes[0].attributes = json.childNodes[0].attributes || {};
       if(isScoped){
-        json.children[0].params["scoped-" + uid] = null;
+        json.childNodes[0].attributes["scoped-" + uid] = null;
       }
     }
     s = templateLib.json2html(json, true);

@@ -174,7 +174,7 @@
         p = str2Array(config.injector),
         params = p ? p.concat([fn]) : fn;
       //props ? pHandler.add(name, props()) : null;
-      console.log(mtd, name, params);
+      //console.log(mtd, name, params);
       name
         ? module[mtd](name, params)
         : console.warn("没有提供名称的组件不能被注册。")
@@ -239,7 +239,6 @@
         })
       });
       $locationProvider.hashPrefix('');
-      console.log("默认路由为:", defaultRouter);
       $routeProvider.otherwise({redirectTo:'/' + ( defaultRouter ? defaultRouter : "")});
     }
   ]);

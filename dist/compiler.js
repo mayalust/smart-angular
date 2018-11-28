@@ -9,8 +9,8 @@ const webpack = require("webpack"),
   _deps = "./deps.js",
   _workpath = pathLib.resolve(process.cwd()),
   _Webpackconfig = {
-    devtool : 'inline-source-map',
     mode : "development",
+    devtool : '#source-map',
     module : {
       rules : [
         {
@@ -106,6 +106,7 @@ const webpack = require("webpack"),
       ]
     }
   };
+
 function info(){
   console.info.apply(console, arguments);
 }
@@ -323,13 +324,15 @@ function wepackRun(name){
   return new Promise((res, rej) => {
     extend(_Webpackconfig, {
       entry : {
-        app : pathLib.join( __dirname, "./smart-angular.js" )
+        output : pathLib.join( __dirname, "./smart-angular.js" ),
+        venders : ["angular"]
       },
       output: {
         path: pathLib.join( _workpath , "./ps-" + name),
-        filename: 'output.js'
+        filename : "[name].js"
       }
-    })
+    });
+    console.log(JSON.stringify(_Webpackconfig));
     webpack(_Webpackconfig, (err) => {
       err
         ? (console.error("打包失败"),rej(err))

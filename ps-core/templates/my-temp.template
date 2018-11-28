@@ -1,20 +1,7 @@
-<config injector="$scope"
-></config>
 <template>
   <div>
-    <span>{{msg}}</span>
+    <hr/>
+      <slot></slot>
+    <hr/>
   </div>
 </template>
-<script type="text/javascript">
-  export default function(scope){
-    scope.msg = `欢迎使用smart-angular!`;
-  }
-</script>
-<style type="less" @scope>
-  span{
-    padding : 10px;
-    color : #333;
-    background-color : #eee;
-    border : 1px solid #ddd;
-  }
-</style>

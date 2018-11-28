@@ -2,13 +2,13 @@
     injector="$scope,$q,$timeout"
 ></config>
 <template>
-  <div>
-    <c-test></c-test>
-  </div>
+  <my-temp>
+    <div>{{n}}</div>
+  </my-temp>
 </template>
 <script type="text/javascript">
   export default function(scope,q,timeout,comptree){
-
+    scope.n = 10;
   };
 </script>
 <style type="less">

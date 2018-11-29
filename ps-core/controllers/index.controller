@@ -11,7 +11,7 @@
     scope.n = 10;
   };
 </script>
-<style type="less">
+<style type="less" scoped="true">
   .leftpart{
     position : absolute;
     width : 250px;

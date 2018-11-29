@@ -202,14 +202,14 @@ module.exports = function (source,map) {
         })
       }
     });
-    if(json.childNodes && json.childNodes.length > 0){
-      if(!json.childNodes[0]){
+    if(json.children && json.children.length > 0){
+      if(!json.children[0]){
         console.error("json.children[0] is undefined");
         console.dir(json);
       }
-      json.childNodes[0].attributes = json.childNodes[0].attributes || {};
+      json.children[0].attributes = json.children[0].attributes || {};
       if(isScoped){
-        json.childNodes[0].attributes["scoped-" + uid] = null;
+        json.children[0].attributes["scoped-" + uid] = null;
       }
     }
     s = templateLib.json2html(json, true);

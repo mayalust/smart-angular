@@ -324,15 +324,13 @@ function wepackRun(name){
   return new Promise((res, rej) => {
     extend(_Webpackconfig, {
       entry : {
-        output : pathLib.join( __dirname, "./smart-angular.js" ),
-        venders : ["angular"]
+        output : pathLib.join( __dirname, "./smart-angular.js" )
       },
       output: {
         path: pathLib.join( _workpath , "./ps-" + name),
         filename : "[name].js"
       }
     });
-    console.log(JSON.stringify(_Webpackconfig));
     webpack(_Webpackconfig, (err) => {
       err
         ? (console.error("打包失败"),rej(err))

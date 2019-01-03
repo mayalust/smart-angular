@@ -1,5 +1,4 @@
-<config injector="$location"
-></config>
+<config injector="$location"></config>
 <script type="text/javascript">
   export default function(location){
     var factory = {

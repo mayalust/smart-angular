@@ -7,7 +7,6 @@ const render = handlers => {
     });
     if(configs.length > 0){
       angularModule.config([ '$routeProvider', '$locationProvider', ( $routeProvider, $locationProvider ) => {
-        console.log(configs);
         configs.forEach( ({ router, template, ctrlname }) => {
           $routeProvider.when(router, {
             template : template,

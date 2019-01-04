@@ -1,6 +1,6 @@
 {
   "name": "smart-angular",
-  "version": "1.0.78",
+  "version": "1.5.1",
   "description": "proudsmart smart-angular",
   "main": "./dist/index.js",
   "repository": {
@@ -29,6 +29,7 @@
     "css-loader": "^2.0.2",
     "less": "^3.9.0",
     "less-loader": "^4.1.0",
+    "loader-utils": "^1.2.3",
     "mini-css-extract-plugin": "^0.5.0",
     "ps-angular-loader": "^1.0.42",
     "ps-filetree": "^1.0.11",
@@ -38,7 +39,7 @@
   },
   "devDependencies": {
     "angular": "^1.7.5",
-    "angular-route": "^1.7.5",
+    "angular-ui-router": "^1.0.20",
     "webpack-dev-server": "^3.1.14"
   }
 }

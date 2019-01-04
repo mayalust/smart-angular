@@ -6,11 +6,19 @@ const render = handlers => {
       config && config.type === "router" ? configs.push( config ) : null;
     });
     if(configs.length > 0){
-      angularModule.config([ '$routeProvider', '$locationProvider', ( $routeProvider, $locationProvider ) => {
+      angularModule.config([ '$stateProvider', '$locationProvider', ( $stateProvider, $locationProvider ) => {
         configs.forEach( ({ router, template, ctrlname }) => {
-          $routeProvider.when(router, {
+          $stateProvider.state(router, {
+            url : router,
             template : template,
-            controller: ctrlname
+            controller: ctrlname,
+            resolve : {
+              getCtrl : ["$q", function(q){
+                let defer =  q.defer();
+                defer.resolve("success");
+                return defer.promise;
+              }]
+            }
           });
         });
         $locationProvider.hashPrefix('');

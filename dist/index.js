@@ -14,6 +14,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   webpackConfig = {
     mode : "development",
     devtool : "#source-map",
+    watch : true,
     module : {
       rules : [{
         test : /\.js$/,
@@ -37,8 +38,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin"),
           loader : MiniCssExtractPlugin.loader
         },"css-loader","less-loader"]
       }]
-    },
-    watch : true
+    }
   };
 explainers.add("template", null);
 function splice(arr, callback){
@@ -123,6 +123,11 @@ function render(name){
         console.error(err.message);
       }
     });
+    /**
+    compiler.watch(watchOptions, compiler => {
+      time = new Date();
+      console.log("change");
+    });**/
   });
 }
 module.exports = render

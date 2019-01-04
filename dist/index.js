@@ -55,6 +55,9 @@ function recersive(node, callback){
     }
   }
 }
+function toSecond( milisec ){
+  return (milisec/1000).toFixed(2)
+}
 function render(name){
   let compiler, time = new Date(), entry = {
     template : pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=template&pack=${name}`)
@@ -104,7 +107,7 @@ function render(name){
     });
     console.warn("smart-angular start pack");
     compiler = webpack(webpackConfig, (err, state) => {
-      console.warn(`smart-angular pack done in ${new Date() - time}s`);
+      console.warn(`smart-angular pack done in ${toSecond(new Date() - time)}s`);
       if(err === null){
         if(state.hasErrors()){
           console.error("code Error");

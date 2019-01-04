@@ -82,7 +82,7 @@ function render(name){
       if( config.exclude.some( d => d.test(node.abspath)) ){ return; }
       let __type = node.ext.slice(1);
       if( __type === "controller" ){
-        entry[node.name] = pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=${__type}&pack=${name}`);
+        entry[node.name] = pathLib.resolve(filepath, `${node.abspath}`);
       }
       keys.forEach( key => {
         entry[key] = pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=${key}&pack=${name}`);

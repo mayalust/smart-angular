@@ -43,7 +43,7 @@ explainers.add("template", null);
 function splice(arr, callback){
   let inx = arr.findIndex( ( d, i) => callback( d, i) ),
     rs = arr[inx];
-  arr.splice(inx, 0);
+  arr.splice(inx, 1);
   return rs;
 }
 function recersive(node, callback){
@@ -56,7 +56,7 @@ function recersive(node, callback){
   }
 }
 function render(name){
-  let compiler, entry = {
+  let compiler, time = new Date(), entry = {
     template : pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=template&pack=${name}`)
   }, output = {
     path : pathLib.resolve(workpath, "./ps-core/build"),
@@ -102,7 +102,9 @@ function render(name){
         options : config
       }
     });
+    console.warn("smart-angular start pack");
     compiler = webpack(webpackConfig, (err, state) => {
+      console.warn(`smart-angular pack done in ${new Date() - time}s`);
       if(err === null){
         if(state.hasErrors()){
           console.error("code Error");

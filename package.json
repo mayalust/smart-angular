@@ -1,6 +1,6 @@
 {
   "name": "smart-angular",
-  "version": "1.5.1",
+  "version": "1.5.11",
   "description": "proudsmart smart-angular",
   "main": "./dist/index.js",
   "repository": {
@@ -19,7 +19,7 @@
     "debug": "node-inspector -p 8000"
   },
   "bin": {
-    "smart-angular": "./dist/run.js"
+    "smart-angular": "./dist/index.js"
   },
   "homepage": "https://github.com/mayalust/smart-angular#readme",
   "dependencies": {

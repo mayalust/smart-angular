@@ -37,7 +37,8 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin"),
           loader : MiniCssExtractPlugin.loader
         },"css-loader","less-loader"]
       }]
-    }
+    },
+    watch : true
   };
 explainers.add("template", null);
 function splice(arr, callback){
@@ -67,6 +68,10 @@ function render(name){
   }, defaultConfig = {
     exclude : [/\.test/, /([\\\/])exclude\1/]
   }, config = defaultConfig,
+    watchOptions = {
+      aggregateTimeout: 2000,
+      poll: 1000
+    },
   keys = explainers.keys(),
   controller = splice( keys, ( d, i )=> d === "controller");
   ins.on("start", root => {
@@ -118,6 +123,6 @@ function render(name){
         console.error(err.message);
       }
     });
-  })
+  });
 }
 module.exports = render

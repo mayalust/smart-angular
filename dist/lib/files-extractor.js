@@ -18,7 +18,7 @@ module.exports.pitch = function(remainRequest){
     keys = explainers.keys(),
     output = [`import { render } from "-!${remainRequest}"`],
     ins = filetree(pathLib.resolve(workpath, "./ps-core"));
-  function recersive(node, callback){
+  function recursive(node, callback){
     let item, queue = isPlainObj(node) ? [node] : [];
     while( item = queue.shift() ){
       isFunction(callback) && callback(item);
@@ -39,7 +39,7 @@ module.exports.pitch = function(remainRequest){
     let node = root.children.find( d => {
       return new RegExp( type + "s?", "g").test( d.path );
     });
-    recersive(node, node => {
+    recursive(node, node => {
       if( exclude.some( d => d.test(node.abspath)) ){ return; }
       let __type = node.ext.slice(1), filename = getFileName(node.abspath);
       if( type === "style") {

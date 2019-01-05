@@ -1,5 +1,6 @@
 const MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   { extend, getFilePath, isArray, isFunction } = require("ps-ultility"),
+  fs = require("fs"),
   { parse } = require("querystring"),
   webpack = require("webpack"),
   pathLib = require("path"),
@@ -14,7 +15,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   webpackConfig = {
     mode : "development",
     devtool : "#source-map",
-    watch : true,
+    watch : false,
     module : {
       rules : [{
         test : /\.js$/,
@@ -63,14 +64,53 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin"),
       }
     }
   };
-explainers.add("template", null);
+function makeReg( arr ){
+  return new RegExp(`([^\\.]+)\\.((?:${arr.join(`)|(?:`)}))\\.js$`, "g");
+}
+function makeEntry(type, path){
+  let entry = {};
+  entry[type] = path;
+  return entry;
+}
+function angular_middleware(req, res, next){
+  let keys = explainers.keys(),
+   match = makeReg( keys ).exec(req.url);
+  match ? runWebpack( makeEntry(match[2], req.url) ).then((d) => {
+    res.setHeader(`Content-Type`, `application/javascript; charset=UTF-8`);
+    fs.readFile(pathLib.join(workpath,`${match[1]}.${match[2]}.js`), function(err, d){
+      err
+        ? res.write(`${JSON.stringify(err)}`)
+        : res.write(d);
+      res.end();
+    })
+  }) : next();
+}
+function runWebpack(entry){
+  return new Promise( (res, rej) => {
+    let time = new Date()
+    webpackConfig.entry = entry;
+    webpack(webpackConfig, (err, state) => {
+      if(err === null){
+        if(state.hasErrors()){
+          console.error("code Error");
+        } else {
+          console.info(`success : ${JSON.stringify(entry)} in ${toSecond(new Date() - time)}s`);
+        }
+        res("compiled");
+      } else {
+        console.error(err.message);
+        rej(err.message);
+      }
+    });
+  });
+}
 function splice(arr, callback){
   let inx = arr.findIndex( ( d, i) => callback( d, i) ),
     rs = arr[inx];
   arr.splice(inx, 1);
   return rs;
 }
-function recersive(node, callback){
+function recursive(node, callback){
   let item, queue = isPlainObj(node) ? [node] : [];
   while( item = queue.shift() ){
     isFunction(callback) && callback(item);
@@ -83,7 +123,7 @@ function toSecond( milisec ){
   return (milisec/1000).toFixed(2)
 }
 function render(name){
-  let compiler, time = new Date(), entry = {
+  let compiler, entry = {
     template : pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=template&pack=${name}`)
   }, output = {
     path : pathLib.resolve(workpath, "./ps-core/build"),
@@ -97,60 +137,73 @@ function render(name){
     },
   keys = explainers.keys(),
   controller = splice( keys, ( d, i )=> d === "controller");
+  extend( webpackConfig, {
+    output : output,
+    plugins : [new angularLoaderPlugin(),new MiniCssExtractPlugin({
+      filename: `${name}.[name].css`,
+      chunkFilename: `${name}.[id].css`
+    })]
+  });
+  webpackConfig.module.rules.push({
+    resource : d => {
+      return true;
+    },
+    resourceQuery : query => {
+      let pa = parse(query.slice(1));
+      return pa.smartangular !== undefined;
+    },
+    use : {
+      loader : pathLib.resolve(filepath, "./lib/files-extractor.js"),
+      options : config
+    }
+  });
   ins.on("start", root => {
-    let node = root.children.find( d => {
+    let time = new Date(), node = root.children.find( d => {
       return new RegExp( "controllers?", "g").test( d.path );
-    });
-    recersive(node, node => {
+    }), waitings = [];
+    function createPromise(key){
+      let path;
+      if( typeof key === "object") {
+        path = key.path;
+        key = key.name;
+      } else if(typeof key === "string") {
+        path = `./lib/angular-loader.js?smartangular&type=${key}&pack=${name}`
+      } else {
+        return;
+      }
+      let entry = {};
+      entry[key] = pathLib.resolve(filepath, path);
+      return runWebpack(entry);
+    }
+    recursive(node, node => {
       if( config.exclude.some( d => d.test(node.abspath)) ){ return; }
       let __type = node.ext.slice(1);
       if( __type === "controller" ){
-        entry[node.name] = pathLib.resolve(filepath, `${node.abspath}`);
+        waitings.push({
+          name : node.name,
+          path : pathLib.resolve(filepath, `${node.abspath}`)
+        });
       }
-      keys.forEach( key => {
-        entry[key] = pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=${key}&pack=${name}`);
+    });
+    [].push.apply(waitings,keys);
+    function recursivePromise(p) {
+      return p ? p.then( d => {
+        return recursivePromise(createPromise(waitings.shift()))
+      }) : undefined;
+    }
+    return recursivePromise(createPromise(waitings.shift())).then( d => {
+      return runWebpack({
+        style : pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=style&pack=${name}`)
       });
-      entry['style'] = pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=style&pack=${name}`);
-      extend( webpackConfig, {
-        entry : entry,
-        output : output,
-        plugins : [new angularLoaderPlugin(),new MiniCssExtractPlugin({
-          filename: `${name}.[name].css`,
-          chunkFilename: `${name}.[id].css`
-        })]
-      });
+    }).then(d => {
+      console.log(`success : all packed up in ${toSecond(new Date() - time)}s`);
+    }).catch(e => {
+      console.error(JSON.stringify(e));
     });
-    webpackConfig.module.rules.push({
-      resource : d => {
-        return true;
-      },
-      resourceQuery : query => {
-        let pa = parse(query.slice(1));
-        return pa.smartangular !== undefined;
-      },
-      use : {
-        loader : pathLib.resolve(filepath, "./lib/files-extractor.js"),
-        options : config
-      }
-    });
-    console.warn("smart-angular start pack");
-    compiler = webpack(webpackConfig, (err, state) => {
-      console.warn(`smart-angular pack done in ${toSecond(new Date() - time)}s`);
-      if(err === null){
-        if(state.hasErrors()){
-          console.error("code Error");
-        } else {
-          console.log("success");
-        }
-      } else {
-        console.error(err.message);
-      }
-    });
-    /**
-    compiler.watch(watchOptions, compiler => {
-      time = new Date();
-      console.log("change");
-    });**/
   });
 }
-module.exports = render
+explainers.add("template", null);
+module.exports = render;
+module.exports.server = function(app){
+  app.use(angular_middleware);
+};

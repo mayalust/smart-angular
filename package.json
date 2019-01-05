@@ -1,6 +1,6 @@
 {
   "name": "smart-angular",
-  "version": "1.5.20",
+  "version": "1.5.21",
   "description": "proudsmart smart-angular",
   "main": "./dist/index.js",
   "repository": {
@@ -13,19 +13,20 @@
     "url": "https://github.com/mayalust/smart-angular/issues"
   },
   "scripts": {
-    "init": "dist/run.js init",
-    "pack": "dist/run.js pack",
-    "dev": "dist/run.js dev",
+    "init": "./dist/run.js init",
+    "pack": "./dist/run.js pack",
+    "dev": "./dist/run.js dev",
     "debug": "node-inspector -p 8000"
   },
   "bin": {
-    "smart-angular": "./dist/index.js"
+    "smart-angular": "./dist/run.js"
   },
   "homepage": "https://github.com/mayalust/smart-angular#readme",
   "dependencies": {
     "@babel/core": "^7.0.0",
     "@babel/preset-env": "^7.2.3",
     "babel-loader": "^8.0.4",
+    "colors": "^1.3.3",
     "css-loader": "^2.0.2",
     "express": "^4.16.4",
     "less": "^3.9.0",
@@ -34,7 +35,7 @@
     "mini-css-extract-plugin": "^0.5.0",
     "ps-angular-loader": "^1.0.43",
     "ps-filetree": "^1.0.13",
-    "ps-ultility": "^1.0.40",
+    "ps-ultility": "^1.0.41",
     "style-loader": "^0.23.1",
     "webpack": "^4.28.2"
   },

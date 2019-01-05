@@ -1,4 +1,5 @@
-const MiniCssExtractPlugin = require("mini-css-extract-plugin"),
+const colors = require('colors'),
+  MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   { extend, getFilePath, isArray, isFunction } = require("ps-ultility"),
   fs = require("fs"),
   { parse } = require("querystring"),
@@ -7,12 +8,39 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   workpath = process.cwd(),
   filepath = getFilePath(__filename),
   pstree = require("ps-filetree"),
+  defaultConfig = {
+    exclude : [/\.test/, /([\\\/])exclude\1/],
+    renderWhileStart : true
+  },
   ins = pstree(pathLib.resolve(workpath, "./ps-core")),
-  isPlainObj = obj => typeof obj === "object" && obj !== null
-  isTemplate = n => /\.template$/.test(n.abspath),
+  isPlainObj = obj => typeof obj === "object" && obj !== null,
+isTemplate = n => /\.template$/.test(n.abspath),
   getPath = n => n.abspath,
-  { explainers, angularLoaderPlugin, template } = require("ps-angular-loader"),
-  webpackConfig = {
+  createCached = d => {
+    class cached {
+      set( attr, value ){
+        this[attr] = value;
+      }
+      get( attr ){
+        return this[attr];
+      }
+      keys(){
+        let keys = [];
+        for(var i in this){
+          keys.push(i);
+        }
+        return keys;
+      }
+    }
+    return new cached
+  },
+  cached = {
+    controller : createCached(),
+    directive : createCached(),
+    service : createCached(),
+    style : createCached()
+  }, { explainers, angularLoaderPlugin, template } = require("ps-angular-loader"),
+  __webpackConfig = {
     mode : "development",
     devtool : "#source-map",
     watch : false,
@@ -29,13 +57,11 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin"),
       },{
         test : /\.css$/,
         use : [{
-          //loader : 'style-loader'
           loader : MiniCssExtractPlugin.loader,
         },"css-loader"]
       },{
         test : /\.less$/,
         use : [{
-          //loader : 'style-loader'
           loader : MiniCssExtractPlugin.loader
         },"css-loader","less-loader"]
       }]
@@ -64,37 +90,30 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin"),
       }
     }
   };
-function makeReg( arr ){
-  return new RegExp(`([^\\.]+)\\.((?:${arr.join(`)|(?:`)}))\\.js$`, "g");
+function makeReg( arr ) {
+  let type = ['js','css'],
+    regex = new RegExp(`(([^\\.]+)\\.((?:${arr.join(`)|(?:`)})))\\.((?:${type.join(`)|(?:`)}))$`, "g")
+  return regex;
 }
-function makeEntry(type, path){
-  let entry = {};
-  entry[type] = path;
-  return entry;
+function recursive(node, callback){
+  let item, queue = isPlainObj(node) ? [node] : [];
+  while( item = queue.shift() ){
+    isFunction(callback) && callback(item);
+    if(isArray(item.children)){
+      [].push.apply(queue, item.children)
+    }
+  }
 }
-function angular_middleware(req, res, next){
-  let keys = explainers.keys(),
-   match = makeReg( keys ).exec(req.url);
-  match ? runWebpack( makeEntry(match[2], req.url) ).then((d) => {
-    res.setHeader(`Content-Type`, `application/javascript; charset=UTF-8`);
-    fs.readFile(pathLib.join(workpath,`${match[1]}.${match[2]}.js`), function(err, d){
-      err
-        ? res.write(`${JSON.stringify(err)}`)
-        : res.write(d);
-      res.end();
-    })
-  }) : next();
-}
-function runWebpack(entry){
+function runWebpack(entry, webpackConfig){
   return new Promise( (res, rej) => {
     let time = new Date()
     webpackConfig.entry = entry;
     webpack(webpackConfig, (err, state) => {
       if(err === null){
         if(state.hasErrors()){
-          console.error("code Error");
+          console.error(`code Error : ${JSON.stringify(entry)} in ${toSecond(new Date() - time)}s`.error);
         } else {
-          console.info(`success : ${JSON.stringify(entry)} in ${toSecond(new Date() - time)}s`);
+          console.info(`success : ${JSON.stringify(entry)} in ${toSecond(new Date() - time)}s`.info);
         }
         res("compiled");
       } else {
@@ -110,33 +129,17 @@ function splice(arr, callback){
   arr.splice(inx, 1);
   return rs;
 }
-function recursive(node, callback){
-  let item, queue = isPlainObj(node) ? [node] : [];
-  while( item = queue.shift() ){
-    isFunction(callback) && callback(item);
-    if(isArray(item.children)){
-      [].push.apply(queue, item.children)
-    }
-  }
-}
 function toSecond( milisec ){
   return (milisec/1000).toFixed(2)
 }
-function render(name){
-  let compiler, entry = {
-    template : pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=template&pack=${name}`)
-  }, output = {
+function makeWebpackConfig(name, config, webpackConfig) {
+  let output = {
     path : pathLib.resolve(workpath, "./ps-core/build"),
     filename : `${name}.[name].js`
-  }, defaultConfig = {
-    exclude : [/\.test/, /([\\\/])exclude\1/]
-  }, config = defaultConfig,
-    watchOptions = {
-      aggregateTimeout: 2000,
-      poll: 1000
-    },
-  keys = explainers.keys(),
-  controller = splice( keys, ( d, i )=> d === "controller");
+  }, watchOptions = {
+    aggregateTimeout: 2000,
+    poll: 1000
+  };
   extend( webpackConfig, {
     output : output,
     plugins : [new angularLoaderPlugin(),new MiniCssExtractPlugin({
@@ -157,6 +160,15 @@ function render(name){
       options : config
     }
   });
+  return webpackConfig;
+}
+function render(name){
+  let compiler, entry = {
+      template : pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=template&pack=${name}`)
+    }, config = defaultConfig,
+    keys = explainers.keys(),
+    webpackConfig = makeWebpackConfig(name, config, extend({}, __webpackConfig)),
+    controller = splice( keys, ( d, i )=> d === "controller");
   ins.on("start", root => {
     let time = new Date(), node = root.children.find( d => {
       return new RegExp( "controllers?", "g").test( d.path );
@@ -173,7 +185,7 @@ function render(name){
       }
       let entry = {};
       entry[key] = pathLib.resolve(filepath, path);
-      return runWebpack(entry);
+      return runWebpack(entry, webpackConfig);
     }
     recursive(node, node => {
       if( config.exclude.some( d => d.test(node.abspath)) ){ return; }
@@ -194,16 +206,122 @@ function render(name){
     return recursivePromise(createPromise(waitings.shift())).then( d => {
       return runWebpack({
         style : pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=style&pack=${name}`)
-      });
+      }, webpackConfig);
     }).then(d => {
-      console.log(`success : all packed up in ${toSecond(new Date() - time)}s`);
+      console.info(`success : all packed up in ${toSecond(new Date() - time)}s`.info);
     }).catch(e => {
       console.error(JSON.stringify(e));
     });
   });
 }
+colors.setTheme({
+  silly: 'rainbow',
+  input: 'grey',
+  verbose: 'cyan',
+  prompt: 'red',
+  info: 'green',
+  data: 'blue',
+  help: 'cyan',
+  warn: 'yellow',
+  debug: 'magenta',
+  error: 'red'
+});
 explainers.add("template", null);
 module.exports = render;
-module.exports.server = function(app){
+module.exports.server = function(app, name, config){
+  config = extend({}, defaultConfig, config);
+  let { exclude } = config,
+    webpackConfig = makeWebpackConfig(name, config, extend({}, __webpackConfig));
+  function getFileName(path) {
+    let match = /(?:\\|\/)([^\\\/\.]+)\.(?:[^\.]+)$/.exec(path);
+    return match ? match[1] : ""
+  }
+  function getPath(path){
+    let match = /\.([^\\\/\.]+)\.(?:[^\.]+)$/.exec(path);
+    return match ? match[1] : ""
+  }
+  function isStyle( str ){
+    return /(?:less)|(?:css)|(?:sass)|(?:scss)/.test(str);
+  }
+  function getAllModifyTime( path ){
+    return new Promise((res, rej) => {
+      let obj = {},
+        ins = pstree(pathLib.resolve(workpath, `./ps-${name}/${path}s`))
+      ins.on("start", root => {
+        recursive(root, node => {
+          if( exclude.some( d => d.test(node.abspath)) ){ return; }
+          let __type = node.ext.slice(1), filename = getFileName(node.abspath);
+          if(path === "style" ? isStyle(__type) : __type === path){
+            obj[ filename ] = node.modifytime;
+          }
+        });
+        res(obj);
+      });
+    })
+  }
+  function isModified( path ){
+    return new Promise((res, rej) => {
+      getAllModifyTime( path ).then( modifytimes => {
+        function checkModified(modifytimes){
+          let rs = false
+          for(var i in modifytimes){
+            let cv = config.renderWhileStart ? ( cached[path].get(i) || 0 ) : cached[path].get(i);
+            if( typeof cv !=="undefined" && ( modifytimes[i] - cv !== 0 ) ) {
+              rs = true;
+              cached[path].set(i, modifytimes[i]);
+            } else if(typeof cached[path].get(i) ==="undefined"){
+              cached[path].set(i, modifytimes[i]);
+            }
+          }
+          return rs;
+        }
+        res( checkModified(modifytimes) );
+      });
+    })
+  }
+  function angular_middleware(req, res, next){
+    let keys = explainers.keys(),
+      match = makeReg( keys.concat("style") ).exec(req.url),
+      dics = {
+        js : "application/javascript",
+        css : "text/css"
+      };
+    function makeEntry(type, path){
+      let entry = {};
+      if( keys.concat("style").indexOf(type) !== -1 ) {
+        path = pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=${type}&pack=${name}`);
+      }
+      entry[type] = path;
+      return entry;
+    }
+    function createImmediatePromise(d){
+      return new Promise( res => {
+        res(d);
+      })
+    }
+    function checkModified(){
+      return isModified( match[3] ).then( d => {
+        if( d ){
+          console.info( `_render : ${req.url} , "file is modified"`.data );
+          cached[`${match[3]}_promise`] = runWebpack( makeEntry( match[3], `ps-${name}/${match[3]}s/${getPath(req.url)}.${match[3]}` ), webpackConfig )
+        } else {
+          console.info( `neglect : ${req.url} , ${ cached[`${match[3]}_promise`] ? "file is modified, in rendering state" : "file is not modified, use cached file"}`.input );
+          cached[`${match[3]}_promise`] ? cached[`${match[3]}_promise`].then( d => {
+            cached[`${match[3]}_promise`] = undefined;
+          }) : null;
+        }
+        return d ? cached[`${match[3]}_promise`]
+          : ( cached[`${match[3]}_promise`] || createImmediatePromise("success") )
+      });
+    }
+    match ? checkModified().then( d => {
+      res.setHeader(`Content-Type`, `${dics[match[4]]};charset=UTF-8`);
+      fs.readFile(pathLib.join(workpath,req.url), (err, d) => {
+        err ? res.write(`${JSON.stringify(err)}`)
+          : res.write(d);
+        res.end();
+      })
+    }) : next();
+  }
   app.use(angular_middleware);
 };

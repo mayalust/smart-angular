@@ -12,6 +12,7 @@ const colors = require('colors'),
     exclude : [/\.test/, /([\\\/])exclude\1/],
     renderWhileStart : true
   },
+  getUrl = d => /([^?]*)(?:\?[^?]*)?/.exec(d)[1],
   ins = pstree(pathLib.resolve(workpath, "./ps-core")),
   isPlainObj = obj => typeof obj === "object" && obj !== null,
 isTemplate = n => /\.template$/.test(n.abspath),
@@ -193,7 +194,7 @@ function render(name){
       if( __type === "controller" ){
         waitings.push({
           name : node.name,
-          path : pathLib.resolve(filepath, `${node.abspath}`)
+          path : `./lib/ctrl-extractor.js!${pathLib.resolve(filepath,`${node.abspath}`)}`
         });
       }
     });
@@ -231,6 +232,7 @@ module.exports = render;
 module.exports.server = function(app, name, config){
   config = extend({}, defaultConfig, config);
   let { exclude } = config,
+    keys = explainers.keys(),
     webpackConfig = makeWebpackConfig(name, config, extend({}, __webpackConfig));
   function getFileName(path) {
     let match = /(?:\\|\/)([^\\\/\.]+)\.(?:[^\.]+)$/.exec(path);
@@ -247,16 +249,20 @@ module.exports.server = function(app, name, config){
     return new Promise((res, rej) => {
       let obj = {},
         ins = pstree(pathLib.resolve(workpath, `./ps-${name}/${path}s`))
-      ins.on("start", root => {
-        recursive(root, node => {
-          if( exclude.some( d => d.test(node.abspath)) ){ return; }
-          let __type = node.ext.slice(1), filename = getFileName(node.abspath);
-          if(path === "style" ? isStyle(__type) : __type === path){
-            obj[ filename ] = node.modifytime;
-          }
+      if(keys.concat(["style"]).indexOf(path) !== -1){
+        ins.on("start", root => {
+          recursive(root, node => {
+            if( exclude.some( d => d.test(node.abspath)) ){ return; }
+            let __type = node.ext.slice(1), filename = getFileName(node.abspath);
+            if(path === "style" ? isStyle(__type) : __type === path){
+              obj[ filename ] = node.modifytime;
+            }
+          });
+          res(obj);
         });
-        res(obj);
-      });
+      } else {
+        res();
+      }
     })
   }
   function isModified( path ){
@@ -275,17 +281,18 @@ module.exports.server = function(app, name, config){
           }
           return rs;
         }
-        res( checkModified(modifytimes) );
+        modifytimes ? res( checkModified(modifytimes) ) : res( true );
       });
     })
   }
   function angular_middleware(req, res, next){
-    let keys = explainers.keys(),
-      match = makeReg( keys.concat("style") ).exec(req.url),
+    let url = getUrl(req.url),
+      match = new RegExp(`[\\/]([^\\/]+)[\\\/]${name}\\.([^\\.]+)\\.((?:js)|(?:css))$`, "g").exec(url),
       dics = {
         js : "application/javascript",
         css : "text/css"
       };
+    match ? null : console.log(`prepare : "${url}" -- is not a smartangular file, neglected`.input);
     function makeEntry(type, path){
       let entry = {};
       if( keys.concat("style").indexOf(type) !== -1 ) {
@@ -300,23 +307,31 @@ module.exports.server = function(app, name, config){
       })
     }
     function checkModified(){
-      return isModified( match[3] ).then( d => {
+      return isModified( match[2] ).then( d => {
         if( d ){
-          console.info( `_render : ${req.url} , "file is modified"`.data );
-          cached[`${match[3]}_promise`] = runWebpack( makeEntry( match[3], `ps-${name}/${match[3]}s/${getPath(req.url)}.${match[3]}` ), webpackConfig )
+          console.info( `_render : ${url} , "file is modified"`.data );
+          let p = keys.concat("style").indexOf(match[2]) == -1
+            ? pathLib.resolve(workpath, "./ps-core/build/" + match[1])
+            : pathLib.resolve(workpath, "./ps-core/build");
+          webpackConfig.output = {
+            path : p,
+            filename : `${name}.[name].js`
+          }
+          cached[`${match[2]}_promise`] = runWebpack( makeEntry( match[2], `./lib/angular-loader.js?smartangular&type=${match[1]}&pack=${name}&separate=${match[2]}` ), webpackConfig )
         } else {
-          console.info( `neglect : ${req.url} , ${ cached[`${match[3]}_promise`] ? "file is modified, in rendering state" : "file is not modified, use cached file"}`.input );
-          cached[`${match[3]}_promise`] ? cached[`${match[3]}_promise`].then( d => {
-            cached[`${match[3]}_promise`] = undefined;
+          console.info( `neglect : ${url} , ${ cached[`${match[2]}_promise`] ? "file is modified, in rendering state" : "file is not modified, use cached file"}`.input );
+          cached[`${match[2]}_promise`] ? cached[`${match[2]}_promise`].then( d => {
+            cached[`${match[2]}_promise`] = undefined;
           }) : null;
         }
-        return d ? cached[`${match[3]}_promise`]
-          : ( cached[`${match[3]}_promise`] || createImmediatePromise("success") )
+        return d ? cached[`${match[2]}_promise`]
+          : ( cached[`${match[2]}_promise`] || createImmediatePromise("success") )
       });
     }
     match ? checkModified().then( d => {
-      res.setHeader(`Content-Type`, `${dics[match[4]]};charset=UTF-8`);
-      fs.readFile(pathLib.join(workpath,req.url), (err, d) => {
+      console.info( `_loadfile : ${url} , "file is loaded"`.input );
+      res.setHeader(`Content-Type`, `${dics[match[3]]};charset=UTF-8`);
+      fs.readFile(pathLib.join(workpath,url), (err, d) => {
         err ? res.write(`${JSON.stringify(err)}`)
           : res.write(d);
         res.end();

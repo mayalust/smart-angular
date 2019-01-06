@@ -11,20 +11,20 @@ const { ultils, explainers, template } = require("ps-angular-loader"),
 module.exports = d => d;
 module.exports.pitch = function(remainRequest){
   let callback = this.async(),
+    keys = explainers.keys(),
     { resourceQuery } = this,
     { exclude } = loaderUtils.getOptions(this),
     query = parse(resourceQuery.slice(1)),
-    { smartangular, type, pack, name } = query,
+    { smartangular, type, pack, name, separate } = query,
     keys = explainers.keys(),
     output = [`import { render } from "-!${remainRequest}"`],
     ins = filetree(pathLib.resolve(workpath, "./ps-core"));
   function recursive(node, callback){
-    let item, queue = isPlainObj(node) ? [node] : [];
+    let item, queue = isPlainObj(node) ? [node] : [], end;
     while( item = queue.shift() ){
-      isFunction(callback) && callback(item);
-      if(isArray(item.children)){
-        [].push.apply(queue, item.children)
-      }
+      if( isFunction(callback) && callback(item) === true ) { return };
+      isArray(item.children)
+        ? [].push.apply(queue, item.children) : null;
     }
   }
   function getFileName(path) {
@@ -36,9 +36,7 @@ module.exports.pitch = function(remainRequest){
   }
   output.push(`let handlers = []`);
   ins.on("start", root => {
-    let node = root.children.find( d => {
-      return new RegExp( type + "s?", "g").test( d.path );
-    });
+    let node = root.children.find( d => new RegExp( type + "s?", "g").test( d.path ));
     recursive(node, node => {
       if( exclude.some( d => d.test(node.abspath)) ){ return; }
       let __type = node.ext.slice(1), filename = getFileName(node.abspath);
@@ -49,15 +47,17 @@ module.exports.pitch = function(remainRequest){
       } else if( type === __type ){
         if( type === "template" ) {
           output.push(`require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor'), node.abspath ], null, true )})`)
+        } else if( type === "controller") {
+          output.push(`handlers.push(require(${genRequest.call( this, [ pathLib.resolve(filepath, './ctrl-template-extractor'), node.abspath ], null, true )}).default)`)
         } else {
           output.push(`handlers.push(require(${genRequest.call( this, [ node.abspath ], null, false )}).default)`);
         }
       }
+      return separate === filename;
     });
     if(type !== "template" && type !== "style"){
       output.push(`let renderAll = render(handlers)`);
-      output.push(`window["ps-${pack}"] = window["ps-${pack}"] || {}`);
-      output.push(`window["ps-${pack}"]["${type}"] = renderAll`);
+      output.push(`typeof window !=="undefined" && typeof window["define"] ==="function" && window["define"](function(){ return renderAll })`)
     };
     callback(null, output.join(";\n"));
   });

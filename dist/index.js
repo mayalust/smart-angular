@@ -65,6 +65,11 @@ isTemplate = n => /\.template$/.test(n.abspath),
         use : [{
           loader : MiniCssExtractPlugin.loader
         },"css-loader","less-loader"]
+      },{
+        test : /\.(?:scss)|(?:sass)/,
+        use : [{
+          loader : MiniCssExtractPlugin.loader
+        },"css-loader","sass-loader"]
       }]
     },
     optimization: {

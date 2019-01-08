@@ -1,6 +1,6 @@
-const colors = require('colors'),
+const log = require('proudsmart-log')( true );
   MiniCssExtractPlugin = require("mini-css-extract-plugin"),
-  { extend, getFilePath, isArray, isFunction } = require("ps-ultility"),
+  { extend, getFilePath, isArray, isFunction, tree } = require("ps-ultility"),
   fs = require("fs"),
   { parse } = require("querystring"),
   webpack = require("webpack"),
@@ -109,16 +109,17 @@ function runWebpack(entry, webpackConfig){
   return new Promise( (res, rej) => {
     let time = new Date()
     webpackConfig.entry = entry;
+    log._info({ entry : webpackConfig.entry, output : webpackConfig.output}).run(false);
     webpack(webpackConfig, (err, state) => {
       if(err === null){
         if(state.hasErrors()){
-          console.error(`code Error : ${JSON.stringify(entry)} in ${toSecond(new Date() - time)}s`.error);
+          log.error(`code Error : ${JSON.stringify(entry)} in ${toSecond(new Date() - time)}s`);
         } else {
-          console.info(`success : ${JSON.stringify(entry)} in ${toSecond(new Date() - time)}s`.info);
+          log.success(`success : ${JSON.stringify(entry)} in ${toSecond(new Date() - time)}s`);
         }
         res("compiled");
       } else {
-        console.error(err.message);
+        log.error(err.message);
         rej(err.message);
       }
     });
@@ -209,24 +210,12 @@ function render(name){
         style : pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=style&pack=${name}`)
       }, webpackConfig);
     }).then(d => {
-      console.info(`success : all packed up in ${toSecond(new Date() - time)}s`.info);
+      log.success(`success : all packed up in ${toSecond(new Date() - time)}s`);
     }).catch(e => {
-      console.error(JSON.stringify(e));
+      log.error(JSON.stringify(e));
     });
   });
 }
-colors.setTheme({
-  silly: 'rainbow',
-  input: 'grey',
-  verbose: 'cyan',
-  prompt: 'red',
-  info: 'green',
-  data: 'blue',
-  help: 'cyan',
-  warn: 'yellow',
-  debug: 'magenta',
-  error: 'red'
-});
 explainers.add("template", null);
 module.exports = render;
 module.exports.server = function(app, name, config){
@@ -238,52 +227,12 @@ module.exports.server = function(app, name, config){
     let match = /(?:\\|\/)([^\\\/\.]+)\.(?:[^\.]+)$/.exec(path);
     return match ? match[1] : ""
   }
-  function getPath(path){
-    let match = /\.([^\\\/\.]+)\.(?:[^\.]+)$/.exec(path);
+  function getFolder(path){
+    let match = /(.*)[\\\/](?:[^\\\/]+)$/.exec(path);
     return match ? match[1] : ""
   }
   function isStyle( str ){
     return /(?:less)|(?:css)|(?:sass)|(?:scss)/.test(str);
-  }
-  function getAllModifyTime( path ){
-    return new Promise((res, rej) => {
-      let obj = {},
-        ins = pstree(pathLib.resolve(workpath, `./ps-${name}/${path}s`))
-      if(keys.concat(["style"]).indexOf(path) !== -1){
-        ins.on("start", root => {
-          recursive(root, node => {
-            if( exclude.some( d => d.test(node.abspath)) ){ return; }
-            let __type = node.ext.slice(1), filename = getFileName(node.abspath);
-            if(path === "style" ? isStyle(__type) : __type === path){
-              obj[ filename ] = node.modifytime;
-            }
-          });
-          res(obj);
-        });
-      } else {
-        res();
-      }
-    })
-  }
-  function isModified( path ){
-    return new Promise((res, rej) => {
-      getAllModifyTime( path ).then( modifytimes => {
-        function checkModified(modifytimes){
-          let rs = false
-          for(var i in modifytimes){
-            let cv = config.renderWhileStart ? ( cached[path].get(i) || 0 ) : cached[path].get(i);
-            if( typeof cv !=="undefined" && ( modifytimes[i] - cv !== 0 ) ) {
-              rs = true;
-              cached[path].set(i, modifytimes[i]);
-            } else if(typeof cached[path].get(i) ==="undefined"){
-              cached[path].set(i, modifytimes[i]);
-            }
-          }
-          return rs;
-        }
-        modifytimes ? res( checkModified(modifytimes) ) : res( true );
-      });
-    })
   }
   function angular_middleware(req, res, next){
     let url = getUrl(req.url),
@@ -292,7 +241,7 @@ module.exports.server = function(app, name, config){
         js : "application/javascript",
         css : "text/css"
       };
-    match ? null : console.log(`prepare : "${url}" -- is not a smartangular file, neglected`.input);
+    match ? null : log.minor(`prepare : "${url}" -- is not a smartangular file, neglected`);
     function makeEntry(type, path){
       let entry = {};
       if( keys.concat("style").indexOf(type) !== -1 ) {
@@ -301,15 +250,80 @@ module.exports.server = function(app, name, config){
       entry[type] = path;
       return entry;
     }
+    function getFolder(){
+      return pathLib.resolve(workpath, `./ps-${name}/${ match[1] === "build" 
+        ? match[2] : match[1]}s`);
+    }
     function createImmediatePromise(d){
       return new Promise( res => {
         res(d);
       })
     }
+    function getAllModifyTime( path ){
+      return new Promise((res, rej) => {
+        let obj = {},
+          pa = getFolder( url ),
+          ins = pstree(pa);
+        log._error( path, pa ).run();
+        ins.on("start", root => {
+          tree().forEach(root, node => {
+            if( exclude.some( d => d.test(node.abspath)) ){ return; }
+            let __type = node.ext.slice(1), filename = getFileName(node.abspath);
+            if(path === "style" ? isStyle(__type) : false) {
+              obj[ filename ] = node.modifytime;
+            } else if( match[1] !== "build" ? filename === path : false) {
+              obj[ filename ] = node.modifytime;
+            } else if( __type === path ) {
+              obj[ filename ] = node.modifytime;
+            }
+          });
+          res(obj);
+        });
+      })
+    }
+    function isModified( path ){
+      console.log( path );
+      return new Promise((res, rej) => {
+        getAllModifyTime( path ).then( modifytimes => {
+          function checkModified(modifytimes){
+            let rs = false, cache_obj = getCached(), cv;
+            function getCached(){
+              return match[1] === "build" ?
+                cached[path] : cached[match[1]];
+            }
+            if( match[1] === "build") {
+              for(var i in modifytimes){
+                cv = config.renderWhileStart
+                  ? ( cache_obj.get(i) || 0 )
+                  : cache_obj.get(i);
+                if( typeof cv !=="undefined" && ( modifytimes[ i ] - cv !== 0 ) ) {
+                  rs = true;
+                  if( path !== "controller") {
+                    cache_obj.set(i, modifytimes[ i ]);
+                  }
+                } else if(typeof cached[path].get( i ) ==="undefined"){
+                  if( path !== "controller") {
+                    cache_obj.set(i, modifytimes[ i ]);
+                  }
+                }
+              }
+            } else {
+              console.log( cache_obj.get(path) );
+              cv = config.renderWhileStart
+                ? ( cache_obj.get(path) || 0 ) : cache_obj.get(path)
+              rs = modifytimes[ path ] - cv !== 0;
+              cache_obj.set( path,  modifytimes[ path ]);
+            }
+            return rs;
+          }
+          modifytimes ? res( checkModified(modifytimes) ) : res( true );
+        });
+      })
+    }
     function checkModified(){
       return isModified( match[2] ).then( d => {
         if( d ){
-          console.info( `_render : ${url} , "file is modified"`.data );
+          log.info( `_render : ${url} , "file is modified"` );
           let p = keys.concat("style").indexOf(match[2]) == -1
             ? pathLib.resolve(workpath, "./ps-core/build/" + match[1])
             : pathLib.resolve(workpath, "./ps-core/build");
@@ -317,9 +331,9 @@ module.exports.server = function(app, name, config){
             path : p,
             filename : `${name}.[name].js`
           }
-          cached[`${match[2]}_promise`] = runWebpack( makeEntry( match[2], `./lib/angular-loader.js?smartangular&type=${match[1]}&pack=${name}&separate=${match[2]}` ), webpackConfig )
+          cached[`${match[2]}_promise`] = runWebpack( makeEntry( match[2],  pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=${match[1]}&pack=${name}&separate=${match[2]}`)), webpackConfig )
         } else {
-          console.info( `neglect : ${url} , ${ cached[`${match[2]}_promise`] ? "file is modified, in rendering state" : "file is not modified, use cached file"}`.input );
+          log.minor( `neglect : ${url} , ${ cached[`${match[2]}_promise`] ? "file is modified, in rendering state" : "file is not modified, use cached file"}` );
           cached[`${match[2]}_promise`] ? cached[`${match[2]}_promise`].then( d => {
             cached[`${match[2]}_promise`] = undefined;
           }) : null;
@@ -329,9 +343,10 @@ module.exports.server = function(app, name, config){
       });
     }
     match ? checkModified().then( d => {
-      console.info( `_loadfile : ${url} , "file is loaded"`.input );
+      log.info( `_loadfile : ${url} , "file is loaded"` );
       res.setHeader(`Content-Type`, `${dics[match[3]]};charset=UTF-8`);
       fs.readFile(pathLib.join(workpath,url), (err, d) => {
+        log._error(`get file : ${pathLib.join(workpath,url)}`).run( false );
         err ? res.write(`${JSON.stringify(err)}`)
           : res.write(d);
         res.end();

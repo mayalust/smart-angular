@@ -1,5 +1,6 @@
 const { ultils, explainers, template } = require("ps-angular-loader"),
   { isArray, isFunction, getFilePath } = require("ps-ultility"),
+  log = require('proudsmart-log')( true ),
   workpath = process.cwd(),
   filepath = getFilePath(__filename),
   loaderUtils = require('loader-utils'),
@@ -11,7 +12,6 @@ const { ultils, explainers, template } = require("ps-angular-loader"),
 module.exports = d => d;
 module.exports.pitch = function(remainRequest){
   let callback = this.async(),
-    keys = explainers.keys(),
     { resourceQuery } = this,
     { exclude } = loaderUtils.getOptions(this),
     query = parse(resourceQuery.slice(1)),
@@ -19,8 +19,9 @@ module.exports.pitch = function(remainRequest){
     keys = explainers.keys(),
     output = [`import { render } from "-!${remainRequest}"`],
     ins = filetree(pathLib.resolve(workpath, "./ps-core"));
+  log._info(this.resourcePath);
   function recursive(node, callback){
-    let item, queue = isPlainObj(node) ? [node] : [], end;
+    let item, queue = isPlainObj(node) ? [node] : [];
     while( item = queue.shift() ){
       if( isFunction(callback) && callback(item) === true ) { return };
       isArray(item.children)
@@ -48,7 +49,11 @@ module.exports.pitch = function(remainRequest){
         if( type === "template" ) {
           output.push(`require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor'), node.abspath ], null, true )})`)
         } else if( type === "controller") {
-          output.push(`handlers.push(require(${genRequest.call( this, [ pathLib.resolve(filepath, './ctrl-template-extractor'), node.abspath ], null, true )}).default)`)
+          if( typeof separate === "undefined" ){
+            output.push(`handlers.push(require(${genRequest.call( this, [ pathLib.resolve(filepath, './ctrl-template-extractor'), node.abspath ], null, true )}).default)`)
+          } else if( separate === filename ) {
+            output.push(`handlers.push(require(${genRequest.call( this, [ node.abspath ], null, false )}).default)`)
+          }
         } else {
           output.push(`handlers.push(require(${genRequest.call( this, [ node.abspath ], null, false )}).default)`);
         }
@@ -56,7 +61,11 @@ module.exports.pitch = function(remainRequest){
       return separate === filename;
     });
     if(type !== "template" && type !== "style"){
-      output.push(`let renderAll = render(handlers)`);
+      if(typeof separate !== "undefined"){
+        output.push(`let renderAll = handlers[0]`);
+      } else {
+        output.push(`let renderAll = render(handlers, true)`);
+      }
       output.push(`typeof window !=="undefined" && typeof window["define"] ==="function" && window["define"](function(){ return renderAll })`)
     };
     callback(null, output.join(";\n"));

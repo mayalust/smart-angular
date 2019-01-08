@@ -1,4 +1,4 @@
-const render = handlers => {
+const render = ( handlers, inConfig ) => {
   return angularModule => {
     let configs = []
     handlers.forEach( setup => {
@@ -13,20 +13,45 @@ const render = handlers => {
         return ".."
       }).join("/")
     }
-    if(configs.length > 0){
+    function requireCss(css, callback){
+      function loadCss(url, callback){
+        var link = document.createElement("link");
+        link.setAttribute("rel", "stylesheet");
+        link.setAttribute("type", "text/css");
+        link.setAttribute("href", url);
+        document.head.appendChild(link);
+        link.onload = function(e){
+          typeof callback === "function" ? callback(e) : null;
+        }
+      }
+      function load(css){
+        var url = css.shift();
+        url ? loadCss(url, function(e){
+          load(css);
+        }) : ( typeof callback == "function" ? callback() : null );
+      }
+      load(css.map( d => d + ".css"));
+    }
+    if( configs.length > 0 && inConfig ){
       angularModule.config([ '$stateProvider', '$locationProvider', '$controllerProvider', ( $stateProvider, $locationProvider, $controllerProvider ) => {
         configs.forEach( ({ router, ctrlname, loaderpath, template }) => {
+          function setTemplate(str){
+            $stateProvider.stateRegistry.states[ctrlname].views.$default.template = str;
+          }
           let config = {
             url : router,
             template : template,
             controller : ctrlname,
             resolve : {
               loader : ["$q", function(q){
-                let defer =  q.defer();
-                console.log(getPath(window.location.pathname) + loaderpath.slice(1));
-                window["require"]([getPath(window.location.pathname) + loaderpath.slice(1)], d => {
-                  d($controllerProvider);
-                  defer.resolve("success");
+                let defer =  q.defer(),
+                  path = getPath(window.location.pathname) + loaderpath.slice(1);
+                window["require"]([path], d => {
+                  let { template } = d($controllerProvider);
+                  setTemplate( template );
+                  requireCss([path], d => {
+                    defer.resolve("success");
+                  })
                 });
                 return defer.promise;
               }]

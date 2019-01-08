@@ -9,9 +9,9 @@ const render = ( handlers, inConfig ) => {
       url = url.slice(1);
       url = url.split("/");
       url.pop();
-      return url.map(d => {
+      return url.length > 0 ? url.map(d => {
         return ".."
-      }).join("/")
+      }).join("/") : ".";
     }
     function requireCss(css, callback){
       function loadCss(url, callback){

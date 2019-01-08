@@ -1,5 +1,5 @@
 const log = require('proudsmart-log')( true );
-  MiniCssExtractPlugin = require("mini-css-extract-plugin"),
+MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   { extend, getFilePath, isArray, isFunction, tree } = require("ps-ultility"),
   fs = require("fs"),
   { parse } = require("querystring"),
@@ -15,7 +15,7 @@ const log = require('proudsmart-log')( true );
   getUrl = d => /([^?]*)(?:\?[^?]*)?/.exec(d)[1],
   ins = pstree(pathLib.resolve(workpath, "./ps-core")),
   isPlainObj = obj => typeof obj === "object" && obj !== null,
-isTemplate = n => /\.template$/.test(n.abspath),
+  isTemplate = n => /\.template$/.test(n.abspath),
   getPath = n => n.abspath,
   createCached = d => {
     class cached {
@@ -96,20 +96,6 @@ isTemplate = n => /\.template$/.test(n.abspath),
       }
     }
   };
-function makeReg( arr ) {
-  let type = ['js','css'],
-    regex = new RegExp(`(([^\\.]+)\\.((?:${arr.join(`)|(?:`)})))\\.((?:${type.join(`)|(?:`)}))$`, "g")
-  return regex;
-}
-function recursive(node, callback){
-  let item, queue = isPlainObj(node) ? [node] : [];
-  while( item = queue.shift() ){
-    isFunction(callback) && callback(item);
-    if(isArray(item.children)){
-      [].push.apply(queue, item.children)
-    }
-  }
-}
 function runWebpack(entry, webpackConfig){
   return new Promise( (res, rej) => {
     let time = new Date()
@@ -194,7 +180,7 @@ function render(name){
       entry[key] = pathLib.resolve(filepath, path);
       return runWebpack(entry, webpackConfig);
     }
-    recursive(node, node => {
+    tree().forEach(node, node => {
       if( config.exclude.some( d => d.test(node.abspath)) ){ return; }
       let __type = node.ext.slice(1);
       if( __type === "controller" ){
@@ -232,21 +218,60 @@ module.exports.server = function(app, name, config){
     let match = /(?:\\|\/)([^\\\/\.]+)\.(?:[^\.]+)$/.exec(path);
     return match ? match[1] : ""
   }
-  function getFolder(path){
-    let match = /(.*)[\\\/](?:[^\\\/]+)$/.exec(path);
-    return match ? match[1] : ""
-  }
   function isStyle( str ){
     return /(?:less)|(?:css)|(?:sass)|(?:scss)/.test(str);
   }
   function angular_middleware(req, res, next){
     let url = getUrl(req.url),
-      match = new RegExp(`[\\/]([^\\/]+)[\\\/]${name}\\.([^\\.]+)\\.((?:js)|(?:css))$`, "g").exec(url),
+      loadConfig = makeloadconfig( url ),
       dics = {
         js : "application/javascript",
         css : "text/css"
       };
-    match ? null : log.minor(`prepare : "${url}" -- is not a smartangular file, neglected`);
+    function makeloadconfig(url){
+      let dics = [{
+        test : new RegExp(`(ps-${name})\\\/build\\\/output\\.js`),
+        handler : m => {
+          return {
+            type : "output",
+            output : pathLib.resolve(workpath, `${m[1]}/build`),
+            ext : "js"
+          }
+        }
+      },{
+        test : new RegExp(`(ps-${name})\\\/build\\\/${name}\\.([^.]+)\\.((?:js)|(?:css))`),
+        handler : m => {
+          return {
+            targetPath : `${m[1]}/${m[2]}s`,
+            type : m[2],
+            entry : m[2],
+            separate : null,
+            ext : m[3],
+            output : pathLib.resolve(workpath, `${m[1]}/build`)
+          }
+        }
+      },{
+        test : new RegExp(`(ps-${name})\\\/build\\\/([^\\\\\/]+)s?\\\/${name}\\.([^.]+)\\.((?:js)|(?:css))`),
+        handler : m => {
+          return {
+            targetPath : `${m[1]}/${m[2]}s`,
+            type : m[2],
+            entry : m[3],
+            separate : m[3],
+            ext : m[4],
+            output : pathLib.resolve(workpath, `${m[1]}/build/${m[2]}`),
+            source : url
+          }
+        }
+      }], item;
+      while( item = dics.shift() ){
+        let { test, handler } = item,
+          match = test.exec( url );
+        if( match ){
+          return handler( match )
+        };
+      }
+    }
     function makeEntry(type, path){
       let entry = {};
       if( keys.concat("style").indexOf(type) !== -1 ) {
@@ -255,69 +280,49 @@ module.exports.server = function(app, name, config){
       entry[type] = path;
       return entry;
     }
-    function getFolder(){
-      return pathLib.resolve(workpath, `./ps-${name}/${ match[1] === "build" 
-        ? match[2] : match[1]}s`);
-    }
     function createImmediatePromise(d){
       return new Promise( res => {
         res(d);
       })
     }
-    function getAllModifyTime( path ){
+    function getAllModifyTime( loadConfig ){
+      let { targetPath, type, separate } = loadConfig;
       return new Promise((res, rej) => {
         let obj = {},
-          pa = getFolder( url ),
-          ins = pstree(pa);
-        log._error( path, pa ).run();
+          ins = pstree( targetPath );
+        log._error( type, targetPath ).run( false );
         ins.on("start", root => {
           tree().forEach(root, node => {
             if( exclude.some( d => d.test(node.abspath)) ){ return; }
             let __type = node.ext.slice(1), filename = getFileName(node.abspath);
-            if(path === "style" ? isStyle(__type) : false) {
+            if( ( type === "style" && isStyle(__type) )
+              || ( ( separate ? filename === separate : true ) && __type === type)){
               obj[ filename ] = node.modifytime;
-            } else if( match[1] !== "build" ? filename === path : false) {
-              obj[ filename ] = node.modifytime;
-            } else if( __type === path ) {
-              obj[ filename ] = node.modifytime;
-            }
+            };
           });
           res(obj);
         });
       })
     }
-    function isModified( path ){
-      console.log( path );
+    function isModified( loadConfig ){
       return new Promise((res, rej) => {
-        getAllModifyTime( path ).then( modifytimes => {
+        getAllModifyTime( loadConfig ).then( modifytimes => {
+          let { type, entry } = loadConfig;
           function checkModified(modifytimes){
             let rs = false, cache_obj = getCached(), cv;
             function getCached(){
-              return match[1] === "build" ?
-                cached[path] : cached[match[1]];
+              return cached[ type ];
             }
-            if( match[1] === "build") {
-              for(var i in modifytimes){
-                cv = config.renderWhileStart
-                  ? ( cache_obj.get(i) || 0 )
-                  : cache_obj.get(i);
-                if( typeof cv !=="undefined" && ( modifytimes[ i ] - cv !== 0 ) ) {
-                  rs = true;
-                  if( path !== "controller") {
-                    cache_obj.set(i, modifytimes[ i ]);
-                  }
-                } else if(typeof cached[path].get( i ) ==="undefined"){
-                  if( path !== "controller") {
-                    cache_obj.set(i, modifytimes[ i ]);
-                  }
-                }
-              }
-            } else {
-              console.log( cache_obj.get(path) );
+            for(let i in modifytimes){
               cv = config.renderWhileStart
-                ? ( cache_obj.get(path) || 0 ) : cache_obj.get(path)
-              rs = modifytimes[ path ] - cv !== 0;
-              cache_obj.set( path,  modifytimes[ path ]);
+                ? ( cache_obj.get(i) || 0 )
+                : cache_obj.get(i);
+              if( typeof cv !=="undefined" && ( modifytimes[ i ] - cv !== 0 ) ) {
+                rs = true;
+                cache_obj.set(i, modifytimes[ i ]);
+              } else if(typeof cached[ type ].get( i ) ==="undefined"){
+                cache_obj.set(i, modifytimes[ i ]);
+              }
             }
             return rs;
           }
@@ -325,31 +330,41 @@ module.exports.server = function(app, name, config){
         });
       })
     }
-    function checkModified(){
-      return isModified( match[2] ).then( d => {
+    function checkModified( loadConfig ){
+      let { type, separate, entry, output } = loadConfig;
+      return isModified( loadConfig ).then( d => {
         if( d ){
           log.info( `_render : ${url} , "file is modified"` );
-          let p = keys.concat("style").indexOf(match[2]) == -1
-            ? pathLib.resolve(workpath, "./ps-core/build/" + match[1])
-            : pathLib.resolve(workpath, "./ps-core/build");
           webpackConfig.output = {
-            path : p,
+            path : output,
             filename : `${name}.[name].js`
           }
-          cached[`${match[2]}_promise`] = runWebpack( makeEntry( match[2],  pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=${match[1]}&pack=${name}&separate=${match[2]}`)), webpackConfig )
+          cached[`${ entry }_promise`] = runWebpack( makeEntry( entry,  pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=${ type }&pack=${ name }&separate=${ separate }`)), webpackConfig )
         } else {
-          log.minor( `neglect : ${url} , ${ cached[`${match[2]}_promise`] ? "file is modified, in rendering state" : "file is not modified, use cached file"}` );
-          cached[`${match[2]}_promise`] ? cached[`${match[2]}_promise`].then( d => {
-            cached[`${match[2]}_promise`] = undefined;
+          log.minor( `neglect : ${url} , ${ cached[`${ entry }_promise`] ? "file is modified, in rendering state" : "file is not modified, use cached file"}` );
+          cached[`${ entry }_promise`] ? cached[`${ entry }_promise`].then( d => {
+            cached[`${ entry }_promise`] = undefined;
           }) : null;
         }
-        return d ? cached[`${match[2]}_promise`]
-          : ( cached[`${match[2]}_promise`] || createImmediatePromise("success") )
+        return d ? cached[`${ entry }_promise`]
+          : ( cached[`${ entry }_promise`] || createImmediatePromise("success") )
       });
     }
-    match ? checkModified().then( d => {
+    function loadOutput( loadConfig ){
+      let { type, separate, entry, output } = loadConfig;
+      webpackConfig.output = {
+        path : output,
+        filename : `output.js`
+      };
+      return runWebpack( makeEntry( "output",  pathLib.resolve(filepath, `./lib/output.js`)), webpackConfig )
+    }
+    loadConfig ? null : log.minor(`prepare : "${url}" -- is not a smartangular file, neglected`);
+    loadConfig ? ( loadConfig.type !=="output"
+      ? checkModified( loadConfig )
+      : loadOutput( loadConfig ) ).then( d => {
+      let { ext } = loadConfig;
       log.info( `_loadfile : ${url} , "file is loaded"` );
-      res.setHeader(`Content-Type`, `${dics[match[3]]};charset=UTF-8`);
+      res.setHeader(`Content-Type`, `${dics[ ext ]};charset=UTF-8`);
       fs.readFile(pathLib.join(workpath,url), (err, d) => {
         log._error(`get file : ${pathLib.join(workpath,url)}`).run( false );
         err ? res.write(`${JSON.stringify(err)}`)

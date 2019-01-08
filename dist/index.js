@@ -307,21 +307,33 @@ module.exports.server = function(app, name, config){
     function isModified( loadConfig ){
       return new Promise((res, rej) => {
         getAllModifyTime( loadConfig ).then( modifytimes => {
-          let { type, entry } = loadConfig;
+          let { type, entry, separate } = loadConfig;
           function checkModified(modifytimes){
             let rs = false, cache_obj = getCached(), cv;
             function getCached(){
-              return cached[ type ];
+              return cached[ entry ];
             }
-            for(let i in modifytimes){
+            if( separate ) {
               cv = config.renderWhileStart
-                ? ( cache_obj.get(i) || 0 )
-                : cache_obj.get(i);
-              if( typeof cv !=="undefined" && ( modifytimes[ i ] - cv !== 0 ) ) {
+                ? ( cache_obj || 0 )
+                : cache_obj;
+              if( typeof cv !=="undefined" && ( modifytimes[ entry ] - cv !== 0 ) ) {
                 rs = true;
-                cache_obj.set(i, modifytimes[ i ]);
-              } else if(typeof cached[ type ].get( i ) ==="undefined"){
-                cache_obj.set(i, modifytimes[ i ]);
+                cached[ entry ] = modifytimes[ entry ];
+              } else if(typeof cached[ entry ] === "undefined"){
+                cached[ entry ] = modifytimes[ entry ];
+              }
+            } else {
+              for(let i in modifytimes){
+                cv = config.renderWhileStart
+                  ? ( cache_obj.get(i) || 0 )
+                  : cache_obj.get(i);
+                if( typeof cv !=="undefined" && ( modifytimes[ i ] - cv !== 0 ) ) {
+                  rs = true;
+                  cache_obj.set(i, modifytimes[ i ]);
+                } else if(typeof cached[ type ].get( i ) ==="undefined"){
+                  cache_obj.set(i, modifytimes[ i ]);
+                }
               }
             }
             return rs;

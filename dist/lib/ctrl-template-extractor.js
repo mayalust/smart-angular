@@ -7,6 +7,9 @@ const { getFilePath,  getFileName} = require("ps-ultility"),
   { selectBlock } = require("ps-angular-loader/lib/select"),
   { genRequest, mergeCode } = ultils;
 module.exports = function(source){
+  let { resourceQuery } = this,
+    query = parse(resourceQuery.slice(1)),
+    { pack } = query;
   function replaceAllReturn(str){
     const dics = "nrtf\"\'";
     let regex = [];
@@ -24,8 +27,7 @@ module.exports = function(source){
     script = `export default function(){
     return {
       type : "router",
-      template : "${ replaceAllReturn(template.innerHTML) }",
-      loaderpath : "${`./ps-${"core"}/build/controller/${"core"}.${name}`}",
+      loaderpath : "${`./ps-${pack}/build/controller/${pack}.${name}`}",
       router : "/${name}${ config.param ? "/" + config.param : "" }",
       ctrlname : "${name}"
     }

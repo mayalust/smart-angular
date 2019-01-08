@@ -1,3 +1,4 @@
+const { requireCss, requirejs } = require("ps-ultility");
 const render = ( handlers, inConfig ) => {
   return angularModule => {
     let configs = []
@@ -12,25 +13,6 @@ const render = ( handlers, inConfig ) => {
       return url.length > 0 ? url.map(d => {
         return ".."
       }).join("/") : ".";
-    }
-    function requireCss(css, callback){
-      function loadCss(url, callback){
-        var link = document.createElement("link");
-        link.setAttribute("rel", "stylesheet");
-        link.setAttribute("type", "text/css");
-        link.setAttribute("href", url);
-        document.head.appendChild(link);
-        link.onload = function(e){
-          typeof callback === "function" ? callback(e) : null;
-        }
-      }
-      function load(css){
-        var url = css.shift();
-        url ? loadCss(url, function(e){
-          load(css);
-        }) : ( typeof callback == "function" ? callback() : null );
-      }
-      load(css.map( d => d + ".css"));
     }
     if( configs.length > 0 && inConfig ){
       angularModule.config([ '$stateProvider', '$locationProvider', '$controllerProvider', ( $stateProvider, $locationProvider, $controllerProvider ) => {
@@ -49,9 +31,9 @@ const render = ( handlers, inConfig ) => {
                 window["require"]([path], d => {
                   let { template } = d($controllerProvider);
                   setTemplate( template );
-                  requireCss([path], d => {
+                  requireCss([`${path}.css`], d => {
                     defer.resolve("success");
-                  })
+                  });
                 });
                 return defer.promise;
               }]

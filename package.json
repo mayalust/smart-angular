@@ -34,9 +34,9 @@
     "mini-css-extract-plugin": "^0.5.0",
     "node-sass": "^4.11.0",
     "proudsmart-log": "^1.0.14",
-    "ps-angular-loader": "^1.0.50",
+    "ps-angular-loader": "^1.0.52",
     "ps-filetree": "^1.0.13",
-    "ps-ultility": "^1.0.42",
+    "ps-ultility": "^1.0.46",
     "sass-loader": "^7.1.0",
     "style-loader": "^0.23.1",
     "webpack": "^4.28.2"

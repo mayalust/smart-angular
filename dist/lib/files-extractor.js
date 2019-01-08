@@ -47,10 +47,10 @@ module.exports.pitch = function(remainRequest){
         }
       } else if( type === __type ){
         if( type === "template" ) {
-          output.push(`require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor'), node.abspath ], null, true )})`)
+          output.push(`require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor'), node.abspath ], query, true )})`)
         } else if( type === "controller") {
           if( typeof separate === "undefined" ){
-            output.push(`handlers.push(require(${genRequest.call( this, [ pathLib.resolve(filepath, './ctrl-template-extractor'), node.abspath ], null, true )}).default)`)
+            output.push(`handlers.push(require(${genRequest.call( this, [ pathLib.resolve(filepath, './ctrl-template-extractor'), node.abspath ], query, true )}).default)`)
           } else if( separate === filename ) {
             output.push(`handlers.push(require(${genRequest.call( this, [ node.abspath ], null, false )}).default)`)
           }

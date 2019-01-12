@@ -1,6 +1,7 @@
 const { ultils, explainers, template } = require("ps-angular-loader"),
   { isArray, isFunction, getFilePath } = require("ps-ultility"),
   log = require('proudsmart-log')( true ),
+  psfile = require("ps-file"),
   workpath = process.cwd(),
   filepath = getFilePath(__filename),
   loaderUtils = require('loader-utils'),
@@ -15,7 +16,7 @@ module.exports.pitch = function(remainRequest){
     { resourceQuery } = this,
     { exclude } = loaderUtils.getOptions(this),
     query = parse(resourceQuery.slice(1)),
-    { smartangular, type, pack, name, separate } = query,
+    { smartangular, type, pack, name, separate, mode } = query,
     keys = explainers.keys(),
     output = [`import { render } from "-!${remainRequest}"`],
     ins = filetree(pathLib.resolve(workpath, "./ps-core"));
@@ -36,38 +37,67 @@ module.exports.pitch = function(remainRequest){
     return /(?:less)|(?:css)|(?:sass)|(?:scss)/.test(str);
   }
   output.push(`let handlers = []`);
-  ins.on("start", root => {
-    let node = root.children.find( d => new RegExp( type + "s?", "g").test( d.path ));
-    recursive(node, node => {
-      if( exclude.some( d => d.test(node.abspath)) ){ return; }
-      let __type = node.ext.slice(1), filename = getFileName(node.abspath);
-      if( type === "style") {
-        if ( isStyle( __type ) ){
-          output.push(`require(${genRequest.call( this, [ node.abspath ], null, false )})`);
-        }
-      } else if( type === __type ){
-        if( type === "template" ) {
-          output.push(`require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor'), node.abspath ], query, true )})`)
-        } else if( type === "controller") {
-          if( typeof separate === "undefined" ){
-            output.push(`handlers.push(require(${genRequest.call( this, [ pathLib.resolve(filepath, './ctrl-template-extractor'), node.abspath ], query, true )}).default)`)
-          } else if( separate === filename ) {
-            output.push(`handlers.push(require(${genRequest.call( this, [ node.abspath ], null, false )}).default)`)
-          }
+  let handlers = {
+    template : {
+      makeMap({path}){
+        return `require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor'), path ], query, true )})`;
+      }
+    },
+    style : {
+      makeMap({path}){
+        return `require(${genRequest.call( this, [ path ], null, false )})`;
+      }
+    },
+    controller : {
+      makeMap({path}){
+        if( mode === "config" ){
+          return `handlers.push(require(${genRequest.call( this, [ pathLib.resolve(filepath, './ctrl-template-extractor'), path ], query, true )}).default)`
         } else {
-          output.push(`handlers.push(require(${genRequest.call( this, [ node.abspath ], null, false )}).default)`);
+          return `handlers.push(require(${genRequest.call( this, [ path ], null, false )}).default)`
         }
       }
-      return separate === filename;
-    });
-    if(type !== "template" && type !== "style"){
-      if(typeof separate !== "undefined"){
-        output.push(`let renderAll = handlers[0]`);
-      } else {
-        output.push(`let renderAll = render(handlers, true)`);
+    },
+    directive : {
+      makeMap({path}){
+        return `handlers.push(require(${genRequest.call( this, [ path ], null, false )}).default)`
       }
-      output.push(`typeof window !=="undefined" && typeof window["define"] ==="function" && window["define"](function(){ return renderAll })`)
-    };
-    callback(null, output.join(";\n"));
+    },
+    service : {
+      makeMap({path}){
+        return `handlers.push(require(${genRequest.call( this, [ path ], null, false )}).default)`
+      }
+    }
+  }
+  psfile(pathLib.resolve(workpath, `./ps-${ pack }`)).children( ({ basename, path, ext }) => {
+      if( !new RegExp( type + "s?", "g").test( path ) ){
+        return false;
+      }
+      if( type === "style" ){
+        if(!isStyle( ext )){
+          return false;
+        }
+      } else {
+        if( type !== ext){
+          return false;
+        }
+      }
+      if( exclude.some( d => d.test( path)) ){
+        return false;
+      }
+      if( separate && basename !== separate) {
+        return false;
+      }
+      return true;
+    }).then( d => {
+      [].push.apply(output,d.map( handlers[ type ]["makeMap"]));
+      if(type !== "template" && type !== "style"){
+        if( separate ){
+          output.push(`let renderAll = handlers[0]`);
+        } else {
+          output.push(`let renderAll = render(handlers, true)`);
+        }
+        output.push(`typeof window !=="undefined" && typeof window["define"] ==="function" && window["define"](function(){ return renderAll })`)
+      }
+      callback(null, output.join(";\n"));
   });
 }

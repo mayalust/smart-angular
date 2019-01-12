@@ -35,6 +35,7 @@
     "node-sass": "^4.11.0",
     "proudsmart-log": "^1.0.14",
     "ps-angular-loader": "^1.0.52",
+    "ps-file": "^1.0.15",
     "ps-filetree": "^1.0.13",
     "ps-ultility": "^1.0.46",
     "sass-loader": "^7.1.0",

@@ -41,7 +41,6 @@ const render = ( handlers, inConfig ) => {
           };
           $stateProvider.state(ctrlname, config);
         });
-        $locationProvider.hashPrefix('');
       }])
     }
   };

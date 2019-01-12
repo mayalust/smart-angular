@@ -1,13 +1,16 @@
 const log = require('proudsmart-log')( true );
 MiniCssExtractPlugin = require("mini-css-extract-plugin"),
-  { extend, getFilePath, isArray, isFunction, tree } = require("ps-ultility"),
+  { extend, getFilePath, isArray, isFunction, tree, random, eachProp } = require("ps-ultility"),
   fs = require("fs"),
+  init = require("./lib/init.js"),
   { parse } = require("querystring"),
   webpack = require("webpack"),
   pathLib = require("path"),
   workpath = process.cwd(),
+  psfile = require("ps-file"),
   filepath = getFilePath(__filename),
   pstree = require("ps-filetree"),
+  psfile = require("ps-file"),
   defaultConfig = {
     exclude : [/\.test/, /([\\\/])exclude\1/],
     renderWhileStart : true
@@ -36,13 +39,14 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
     return new cached
   },
   cached = {
+    template : createCached(),
     controller : createCached(),
     directive : createCached(),
     service : createCached(),
     style : createCached()
   }, { explainers, angularLoaderPlugin, template } = require("ps-angular-loader"),
   __webpackConfig = {
-    mode : "development",
+    mode : "production",
     devtool : "#source-map",
     watch : false,
     module : {
@@ -58,7 +62,7 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
       },{
         test : /\.css$/,
         use : [{
-          loader : MiniCssExtractPlugin.loader,
+          loader : MiniCssExtractPlugin.loader
         },"css-loader"]
       },{
         test : /\.less$/,
@@ -96,17 +100,32 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
       }
     }
   };
-function runWebpack(entry, webpackConfig){
+function keys( obj ){
+  let arr = [];
+  for(let i in obj){
+    arr.push( i );
+  }
+  return arr;
+}
+function runWebpack(webpackConfig){
+  function makeOutputPath( { entry, output } ){
+    let { filename, path } = output;
+    return keys(entry).map( d => {
+      return pathLib.resolve( path, `./${filename.replace(`[name]`, d )}`);
+    })
+  }
   return new Promise( (res, rej) => {
-    let time = new Date()
-    webpackConfig.entry = entry;
+    let time = new Date(),
+      successInfo = makeOutputPath( webpackConfig ),
+      { entry, output } = webpackConfig;
     log._info({ entry : webpackConfig.entry, output : webpackConfig.output}).run(false);
+    log.info(`start : ${keys(entry).join(",")}`);
     webpack(webpackConfig, (err, state) => {
       if(err === null){
         if(state.hasErrors()){
-          log.error(`code Error : ${JSON.stringify(entry)} in ${toSecond(new Date() - time)}s`);
+          log.error(`code Error : ${keys(entry).join(",")} in ${toSecond(new Date() - time)}s`);
         } else {
-          log.success(`success : ${JSON.stringify(entry)} in ${toSecond(new Date() - time)}s`);
+          log.success(`success : ${ successInfo } in ${toSecond(new Date() - time)}s`);
         }
         res("compiled");
       } else {
@@ -126,20 +145,6 @@ function toSecond( milisec ){
   return (milisec/1000).toFixed(2)
 }
 function makeWebpackConfig(name, config, webpackConfig) {
-  let output = {
-    path : pathLib.resolve(workpath, "./ps-core/build"),
-    filename : `${name}.[name].js`
-  }, watchOptions = {
-    aggregateTimeout: 2000,
-    poll: 1000
-  };
-  extend( webpackConfig, {
-    output : output,
-    plugins : [new angularLoaderPlugin(),new MiniCssExtractPlugin({
-      filename: `${name}.[name].css`,
-      chunkFilename: `${name}.[id].css`
-    })]
-  });
   webpackConfig.module.rules.push({
     resource : d => {
       return true;
@@ -155,52 +160,177 @@ function makeWebpackConfig(name, config, webpackConfig) {
   });
   return webpackConfig;
 }
-function render(name){
-  let compiler, entry = {
-      template : pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=template&pack=${name}`)
-    }, config = defaultConfig,
-    keys = explainers.keys(),
-    webpackConfig = makeWebpackConfig(name, config, extend({}, __webpackConfig)),
-    controller = splice( keys, ( d, i )=> d === "controller");
-  ins.on("start", root => {
-    let time = new Date(), node = root.children.find( d => {
-      return new RegExp( "controllers?", "g").test( d.path );
-    }), waitings = [];
-    function createPromise(key){
-      let path;
-      if( typeof key === "object") {
-        path = key.path;
-        key = key.name;
-      } else if(typeof key === "string") {
-        path = `./lib/angular-loader.js?smartangular&type=${key}&pack=${name}`
-      } else {
-        return;
-      }
-      let entry = {};
-      entry[key] = pathLib.resolve(filepath, path);
-      return runWebpack(entry, webpackConfig);
+function makeHandlers( name ){
+  function makePath( { url, query } ){
+    let arr = [];
+    for(var i in query){
+      arr.push(`${i}${query[i] != null ? `=${query[i]}` : ``}`);
     }
-    tree().forEach(node, node => {
-      if( config.exclude.some( d => d.test(node.abspath)) ){ return; }
-      let __type = node.ext.slice(1);
-      if( __type === "controller" ){
-        waitings.push({
-          name : node.name,
-          path : `./lib/ctrl-extractor.js!${pathLib.resolve(filepath,`${node.abspath}`)}`
-        });
+    url += "?" + arr.join("&");
+    return url;
+  }
+  function createConfig( type ){
+    let entry = {}
+    entry[ `${type}` ] = makePath({
+      url: pathLib.resolve(filepath, `./lib/angular-loader.js`),
+      query: {
+        smartangular: null,
+        type: type,
+        pack: name,
+        mode: "config"
       }
-    });
-    [].push.apply(waitings,keys);
+    })
+    return {
+      entry : entry,
+      output : {
+        path : pathLib.resolve( workpath, `ps-${name}/build`),
+        filename : `${name}.[name].config.js`
+      },
+      plugins : inputPlugin()
+    }
+  }
+  function createCombined( type ){
+    let entry = {}
+    entry[ type ] = makePath({
+      url : pathLib.resolve( filepath, `./lib/angular-loader.js` ),
+      query : {
+        smartangular : null,
+        type : type,
+        pack : name
+      }
+    })
+    return {
+      entry : entry,
+      output : {
+        path : pathLib.resolve( workpath, `ps-${name}/build`),
+        filename :  `${name}.[name].js`
+      },
+      plugins : inputPlugin({
+        filename: `${name}.[name].css`,
+        chunkFilename: `${name}.[id].css`
+      })
+    }
+  }
+  function createSeparate( type ) {
+    let entry = ({ basename, path }) => {
+      let rs = {}
+      rs[ basename ] = makePath({
+        url : `${pathLib.resolve(filepath, `./lib/angular-loader.js`)}`,
+        query : {
+          smartangular : null,
+          type : type,
+          pack : name,
+          separate : basename
+        }
+      })
+      return rs;
+    }
+    return {
+      entry : entry,
+      output : {
+        path : pathLib.resolve(workpath, `ps-${name}/build/${type}`),
+        filename : `[name].js`
+      },
+      plugins : inputPlugin({
+        filename: `[name].css`,
+        chunkFilename: `[id].css`
+      })
+    }
+  }
+  return {
+    output : {
+      config : {
+        entry : {
+          output : pathLib.resolve( filepath, `./lib/output.js` )
+        },
+        output : {
+          path : pathLib.resolve( workpath, `ps-${name}/build`),
+          filename :  `[name].js`
+        },
+        plugins : inputPlugin()
+      },
+      combined : {
+        entry : {
+          output : pathLib.resolve( filepath, `./lib/output.js` )
+        },
+        output : {
+          path : pathLib.resolve( workpath, `ps-${name}/build`),
+          filename :  `[name].all.js`
+        },
+        plugins : inputPlugin()
+      }
+    },
+    template : {
+      config : createConfig("template"),
+    },
+    controller : {
+      config : createConfig("controller"),
+      combined : createCombined("controller"),
+      separate : createSeparate("controller")
+    },
+    directive : {
+      combined : createCombined("directive"),
+      separate : createSeparate("directive")
+    },
+    service : {
+      combined : createCombined("service"),
+      separate : createSeparate("service")
+    },
+    style : {
+      combined : createCombined("style")
+    }
+  }
+}
+function inputPlugin( css ){
+  return css ? [new angularLoaderPlugin(),new MiniCssExtractPlugin( css )]
+    : [new angularLoaderPlugin()]
+}
+function pack( name ){
+  let config = defaultConfig,
+    handlers = makeHandlers( name ),
+    webpackConfig = makeWebpackConfig(name, config, extend({}, __webpackConfig));
+  psfile(pathLib.resolve(workpath, `./ps-${name}`)).children( n => {
+    return !n.isDir && handlers[n.ext] && handlers[n.ext]["separate"]
+  }).then( allfiles => {
+    let time = new Date(), waitings = [...getConfig(), ...getSeparateConfig(), ...getCombinedConfig()];
+    function createPromise(config){
+      if( config ){
+        extend( webpackConfig, config );
+        return runWebpack( webpackConfig );
+      }
+    }
+    function getConfig(){
+      let waitings = [];
+      for( let i in handlers ){
+        let fn = handlers[ i ]["config"];
+        fn ? waitings.push(fn) : null;
+      }
+      return waitings;
+    }
+    function getCombinedConfig(){
+      let waitings = [];
+      for( let i in handlers ){
+        let fn = handlers[ i ]["combined"];
+        fn ? waitings.push(fn) : null;
+      }
+      return waitings;
+    }
+    function getSeparateConfig(){
+      return allfiles.filter(node => {
+        return !config.exclude.some( d => d.test(node.path)) && handlers[node.ext] && handlers[node.ext]["separate"]
+      }).map( node => {
+        let __type = node.ext,
+          obj = extend({}, handlers[__type]['separate']);
+        obj.entry = handlers[__type]['separate']['entry']( node );
+        return obj;
+      });
+    }
     function recursivePromise(p) {
       return p ? p.then( d => {
         return recursivePromise(createPromise(waitings.shift()))
       }) : undefined;
     }
     return recursivePromise(createPromise(waitings.shift())).then( d => {
-      return runWebpack({
-        style : pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=style&pack=${name}`)
-      }, webpackConfig);
-    }).then(d => {
       log.success(`success : all packed up in ${toSecond(new Date() - time)}s`);
     }).catch(e => {
       log.error(JSON.stringify(e));
@@ -208,10 +338,13 @@ function render(name){
   });
 }
 explainers.add("template", null);
-module.exports = render;
+module.exports = pack;
+module.exports.init = init;
 module.exports.server = function(app, name, config){
   config = extend({}, defaultConfig, config);
-  let { exclude } = config,
+  let uid = random(16),
+    handlers = makeHandlers( name ),
+    { exclude } = config,
     keys = explainers.keys(),
     webpackConfig = makeWebpackConfig(name, config, extend({}, __webpackConfig));
   function getFileName(path) {
@@ -235,7 +368,22 @@ module.exports.server = function(app, name, config){
           return {
             type : "output",
             output : pathLib.resolve(workpath, `${m[1]}/build`),
-            ext : "js"
+            ext : "js",
+            config : handlers['output']['config'],
+            after : loadOutput
+          }
+        }
+      },{
+        test : new RegExp(`(ps-${name})\\\/build\\\/${name}\\.([^.]+)\\.([^.]+)\\.((?:js)|(?:css))`),
+        handler : m => {
+          return {
+            targetPath : `${m[1]}/${m[2]}s`,
+            type : m[2],
+            entry : m[2],
+            ext : m[4],
+            config : handlers[m[2]]["config"],
+            mode : m[3],
+            after : checkModified
           }
         }
       },{
@@ -245,9 +393,9 @@ module.exports.server = function(app, name, config){
             targetPath : `${m[1]}/${m[2]}s`,
             type : m[2],
             entry : m[2],
-            separate : null,
             ext : m[3],
-            output : pathLib.resolve(workpath, `${m[1]}/build`)
+            config : handlers[m[2]]["combined"],
+            after : checkModified
           }
         }
       },{
@@ -259,7 +407,8 @@ module.exports.server = function(app, name, config){
             entry : m[3],
             separate : m[3],
             ext : m[4],
-            output : pathLib.resolve(workpath, `${m[1]}/build/${m[2]}`),
+            config : handlers[m[2]]["separate"],
+            after : checkModified,
             source : url
           }
         }
@@ -271,14 +420,6 @@ module.exports.server = function(app, name, config){
           return handler( match )
         };
       }
-    }
-    function makeEntry(type, path){
-      let entry = {};
-      if( keys.concat("style").indexOf(type) !== -1 ) {
-        path = pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=${type}&pack=${name}`);
-      }
-      entry[type] = path;
-      return entry;
     }
     function createImmediatePromise(d){
       return new Promise( res => {
@@ -343,17 +484,16 @@ module.exports.server = function(app, name, config){
       })
     }
     function checkModified( loadConfig ){
-      let { type, separate, entry, output } = loadConfig;
+      let { type, separate, entry, output, config } = loadConfig;
       return isModified( loadConfig ).then( d => {
         if( d ){
           log.info( `_render : ${url} , "file is modified"` );
-          webpackConfig.output = {
-            path : output,
-            filename : `${name}.[name].js`
-          }
-          cached[`${ entry }_promise`] = runWebpack( makeEntry( entry,  pathLib.resolve(filepath, `./lib/angular-loader.js?smartangular&type=${ type }&pack=${ name }&separate=${ separate }`)), webpackConfig )
+          extend( webpackConfig, config )
+          cached[`${ entry }_promise`] = runWebpack( webpackConfig )
         } else {
-          log.minor( `neglect : ${url} , ${ cached[`${ entry }_promise`] ? "file is modified, in rendering state" : "file is not modified, use cached file"}` );
+          log.minor( `neglect : ${url} , ${ cached[`${ entry }_promise`] 
+            ? "file is modified, in rendering state" 
+            : "file is not modified, use cached file"}` );
           cached[`${ entry }_promise`] ? cached[`${ entry }_promise`].then( d => {
             cached[`${ entry }_promise`] = undefined;
           }) : null;
@@ -363,27 +503,29 @@ module.exports.server = function(app, name, config){
       });
     }
     function loadOutput( loadConfig ){
-      let { type, separate, entry, output } = loadConfig;
-      webpackConfig.output = {
-        path : output,
-        filename : `output.js`
-      };
-      return runWebpack( makeEntry( "output",  pathLib.resolve(filepath, `./lib/output.js`)), webpackConfig )
+      let { config } = loadConfig;
+      extend( webpackConfig, config );
+      return runWebpack( webpackConfig )
+        .then( d => {
+          return checkModified(makeloadconfig( `ps-${name}/build/${name}.template.config.js`));
+        })
     }
-    loadConfig ? null : log.minor(`prepare : "${url}" -- is not a smartangular file, neglected`);
-    loadConfig ? ( loadConfig.type !=="output"
-      ? checkModified( loadConfig )
-      : loadOutput( loadConfig ) ).then( d => {
-      let { ext } = loadConfig;
-      log.info( `_loadfile : ${url} , "file is loaded"` );
-      res.setHeader(`Content-Type`, `${dics[ ext ]};charset=UTF-8`);
-      fs.readFile(pathLib.join(workpath,url), (err, d) => {
-        log._error(`get file : ${pathLib.join(workpath,url)}`).run( false );
-        err ? res.write(`${JSON.stringify(err)}`)
-          : res.write(d);
-        res.end();
+    if( loadConfig ) {
+      loadConfig.after( loadConfig ).then(d => {
+        let { ext } = loadConfig;
+        log.info( `_loadfile : ${url} , "file is loaded"` );
+        res.setHeader(`Content-Type`, `${dics[ ext ]};charset=UTF-8`);
+        psfile(pathLib.join(workpath,url)).read().then( d => {
+          res.write(d);
+          res.end();
+        }).catch( e => {
+          log._error(`cannot get file : ${pathLib.join(workpath,url)}`).run( false );
+        });
       })
-    }) : next();
+    } else {
+      log.minor(`prepare : "${url}" -- is not a smartangular file, neglected`)
+      next()
+    }
   }
   app.use(angular_middleware);
 };

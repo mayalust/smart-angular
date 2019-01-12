@@ -9,14 +9,12 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   workpath = process.cwd(),
   psfile = require("ps-file"),
   filepath = getFilePath(__filename),
-  pstree = require("ps-filetree"),
   psfile = require("ps-file"),
   defaultConfig = {
     exclude : [/\.test/, /([\\\/])exclude\1/],
     renderWhileStart : true
   },
   getUrl = d => /([^?]*)(?:\?[^?]*)?/.exec(d)[1],
-  ins = pstree(pathLib.resolve(workpath, "./ps-core")),
   isPlainObj = obj => typeof obj === "object" && obj !== null,
   isTemplate = n => /\.template$/.test(n.abspath),
   getPath = n => n.abspath,
@@ -134,12 +132,6 @@ function runWebpack(webpackConfig){
       }
     });
   });
-}
-function splice(arr, callback){
-  let inx = arr.findIndex( ( d, i) => callback( d, i) ),
-    rs = arr[inx];
-  arr.splice(inx, 1);
-  return rs;
 }
 function toSecond( milisec ){
   return (milisec/1000).toFixed(2)
@@ -474,19 +466,28 @@ module.exports.server = function(app, name, config){
     function getAllModifyTime( loadConfig ){
       let { targetPath, type, separate } = loadConfig;
       return new Promise((res, rej) => {
-        let obj = {},
-          ins = pstree( targetPath );
+        let obj = {};
         log._error( type, targetPath ).run( false );
-        ins.on("start", root => {
-          tree().forEach(root, node => {
-            if( exclude.some( d => d.test(node.abspath)) ){ return; }
-            let __type = node.ext.slice(1), filename = getFileName(node.abspath);
-            if( ( type === "style" && isStyle(__type) )
-              || ( ( separate ? filename === separate : true ) && __type === type)){
-              obj[ filename ] = node.modifytime;
-            };
-          });
-          res(obj);
+        psfile(pathLib.resolve(workpath, `./ps-${name}`))
+          .children(({ path, basename, ext }) => {
+           if( exclude.some( d => d.test( path ))){
+             return false;
+           }
+           if( type === "style" && !isStyle( ext )){
+             return false;
+           }
+           if( separate ){
+             if( basename !== separate ){
+               return false;
+             }
+           } else {
+             if( ext != type ) {
+               return false;
+             }
+           }
+           return true;
+        }).then(({  basename, modifytime }) => {
+          obj[ basename ] = modifytime;
         });
       })
     }

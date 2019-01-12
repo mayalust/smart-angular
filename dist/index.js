@@ -123,7 +123,7 @@ function runWebpack(webpackConfig){
     webpack(webpackConfig, (err, state) => {
       if(err === null){
         if(state.hasErrors()){
-          log.error(`code Error : ${keys(entry).join(",")} in ${toSecond(new Date() - time)}s`);
+          log.error(`code Error : ${ successInfo } in ${toSecond(new Date() - time)}s`);
         } else {
           log.success(`success : ${ successInfo } in ${toSecond(new Date() - time)}s`);
         }
@@ -160,7 +160,16 @@ function makeWebpackConfig(name, config, webpackConfig) {
   });
   return webpackConfig;
 }
-function makeHandlers( name ){
+function makeHandlers( name, instruction ){
+  function makeMatch( str ){
+    let arr = str.split("."),
+      ext = arr.pop(),
+      condition = `^${arr.map( d => d == "[name]" ? "[^.]+" : d).join(".")}(\\\\.${ext})?$`;
+    return function( target ){
+      return typeof target === "undefined"
+        ? true : new RegExp(condition, "g").test( target )
+    };
+  }
   function makePath( { url, query } ){
     let arr = [];
     for(var i in query){
@@ -179,15 +188,15 @@ function makeHandlers( name ){
         pack: name,
         mode: "config"
       }
-    })
-    return {
+    });
+    return makeMatch( `${name}.${type}.config.js` )( instruction ) ? {
       entry : entry,
       output : {
         path : pathLib.resolve( workpath, `ps-${name}/build`),
         filename : `${name}.[name].config.js`
       },
       plugins : inputPlugin()
-    }
+    } : undefined
   }
   function createCombined( type ){
     let entry = {}
@@ -199,7 +208,7 @@ function makeHandlers( name ){
         pack : name
       }
     })
-    return {
+    return makeMatch( `${name}.${type}.js` )( instruction ) ? {
       entry : entry,
       output : {
         path : pathLib.resolve( workpath, `ps-${name}/build`),
@@ -209,7 +218,7 @@ function makeHandlers( name ){
         filename: `${name}.[name].css`,
         chunkFilename: `${name}.[id].css`
       })
-    }
+    } : undefined
   }
   function createSeparate( type ) {
     let entry = ({ basename, path }) => {
@@ -224,8 +233,7 @@ function makeHandlers( name ){
         }
       })
       return rs;
-    }
-    return {
+    }, dt = {
       entry : entry,
       output : {
         path : pathLib.resolve(workpath, `ps-${name}/build/${type}`),
@@ -235,30 +243,56 @@ function makeHandlers( name ){
         filename: `[name].css`,
         chunkFilename: `[id].css`
       })
-    }
+    };
+    return typeof instruction === "undefined"
+      ? dt : ( makeMatch( `${type}.[name].js` )( instruction )
+        ? node => {
+          return type + "." + node.basename == instruction
+            ? dt : undefined
+        } : undefined )
+  }
+  function createOutputConfig(){
+    return makeMatch( `output.js` )( instruction ) ? {
+      entry : {
+        output : makePath({
+          url : pathLib.resolve( filepath, `./lib/output.js` ),
+          query: {}
+        })
+      },
+      output : {
+        path : pathLib.resolve( workpath, `ps-${name}/build`),
+          filename :  `[name].js`
+      },
+      plugins : inputPlugin()
+    } : undefined;
+  }
+  function createOutputCombined(){
+    return makeMatch( `${name}.output.js` )( instruction ) ? {
+      entry : {
+        output : makePath({
+          url : pathLib.resolve(filepath, `./lib/angular-loader.js`),
+          query: {
+            smartangular: null,
+            type: "output",
+            pack: name,
+            mode: "all"
+          }
+        })
+      },
+      output : {
+        path : pathLib.resolve( workpath, `ps-${name}/build`),
+        filename :  `${name}.[name].js`
+      },
+      plugins : inputPlugin({
+        filename: `${name}.[name].css`,
+        chunkFilename: `${name}.[id].css`
+      })
+    } : undefined;
   }
   return {
     output : {
-      config : {
-        entry : {
-          output : pathLib.resolve( filepath, `./lib/output.js` )
-        },
-        output : {
-          path : pathLib.resolve( workpath, `ps-${name}/build`),
-          filename :  `[name].js`
-        },
-        plugins : inputPlugin()
-      },
-      combined : {
-        entry : {
-          output : pathLib.resolve( filepath, `./lib/output.js` )
-        },
-        output : {
-          path : pathLib.resolve( workpath, `ps-${name}/build`),
-          filename :  `[name].all.js`
-        },
-        plugins : inputPlugin()
-      }
+      config : createOutputConfig(),
+      combined : createOutputCombined()
     },
     template : {
       config : createConfig("template"),
@@ -285,14 +319,17 @@ function inputPlugin( css ){
   return css ? [new angularLoaderPlugin(),new MiniCssExtractPlugin( css )]
     : [new angularLoaderPlugin()]
 }
-function pack( name ){
-  let config = defaultConfig,
-    handlers = makeHandlers( name ),
+function pack(){
+  let args = [].slice.call(arguments),
+    name = args.shift(),
+    instruction = args.join("."),
+    config = defaultConfig,
+    handlers = makeHandlers( name , instruction ),
     webpackConfig = makeWebpackConfig(name, config, extend({}, __webpackConfig));
   psfile(pathLib.resolve(workpath, `./ps-${name}`)).children( n => {
     return !n.isDir && handlers[n.ext] && handlers[n.ext]["separate"]
   }).then( allfiles => {
-    let time = new Date(), waitings = [...getConfig(), ...getSeparateConfig(), ...getCombinedConfig()];
+    let time = new Date(), waitings = [...getConfig(),...getCombinedConfig(),...getSeparateConfig()];
     function createPromise(config){
       if( config ){
         extend( webpackConfig, config );
@@ -317,12 +354,16 @@ function pack( name ){
     }
     function getSeparateConfig(){
       return allfiles.filter(node => {
-        return !config.exclude.some( d => d.test(node.path)) && handlers[node.ext] && handlers[node.ext]["separate"]
+        let fn = handlers[node.ext]["separate"];
+        return !config.exclude.some( d => d.test(node.path))
+          && handlers[node.ext]
+          && ( typeof fn === "function" ? fn( node ) : fn )
       }).map( node => {
         let __type = node.ext,
-          obj = extend({}, handlers[__type]['separate']);
-        obj.entry = handlers[__type]['separate']['entry']( node );
-        return obj;
+          fn = handlers[__type]['separate'],
+          rs = extend({}, typeof fn === "function" ? fn( node ) : fn );
+        rs.entry = typeof rs.entry === "function" ? rs.entry( node ) : rs.entry;
+        return extend({}, rs);
       });
     }
     function recursivePromise(p) {
@@ -330,11 +371,15 @@ function pack( name ){
         return recursivePromise(createPromise(waitings.shift()))
       }) : undefined;
     }
-    return recursivePromise(createPromise(waitings.shift())).then( d => {
-      log.success(`success : all packed up in ${toSecond(new Date() - time)}s`);
-    }).catch(e => {
-      log.error(JSON.stringify(e));
-    });
+    if( waitings.length == 0 ){
+      log.error(JSON.stringify(`no files match the query condition [${instruction}], please try another.`));
+    } else {
+      return recursivePromise(createPromise(waitings.shift())).then( d => {
+        log.success(`success : all packed up in ${toSecond(new Date() - time)}s`);
+      }).catch(e => {
+        log.error(JSON.stringify(e));
+      });
+    }
   });
 }
 explainers.add("template", null);
@@ -491,8 +536,8 @@ module.exports.server = function(app, name, config){
           extend( webpackConfig, config )
           cached[`${ entry }_promise`] = runWebpack( webpackConfig )
         } else {
-          log.minor( `neglect : ${url} , ${ cached[`${ entry }_promise`] 
-            ? "file is modified, in rendering state" 
+          log.minor( `neglect : ${url} , ${ cached[`${ entry }_promise`]
+            ? "file is modified, in rendering state"
             : "file is not modified, use cached file"}` );
           cached[`${ entry }_promise`] ? cached[`${ entry }_promise`].then( d => {
             cached[`${ entry }_promise`] = undefined;

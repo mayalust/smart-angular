@@ -6,16 +6,17 @@ function getString(str){
     match = stringExp.exec(str);
   return match ? match[1] : null;
 }
-let arguments = process.argv.slice(2),
-  command = getString(arguments[0]) || `pack`,
-  name = getString(arguments[1]) ||  `core`,
+let arguments = process.argv.slice(2).map(getString),
+  command = arguments.shift(),
+  name = arguments.shift(),
   fns = {
-    pack : function( name ){
-      smartAngular(name);
+    pack( ){
+      smartAngular.apply( null, arguments );
     },
-    init : function( name ){
-      init( name );
+    init( ){
+      init.apply( null, arguments )
     }
   },
   fn = fns[command];
-typeof fn === "function" ? fn(name) : null;
+typeof fn === "function" ? fn.apply(null, [ name, ...arguments ]) : null;
+//fns["pack"]("core", "controller.ps_ceshi");

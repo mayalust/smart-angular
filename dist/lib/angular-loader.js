@@ -1,6 +1,6 @@
 const { requireCss, requirejs } = require("ps-ultility");
 const render = ( handlers, inConfig ) => {
-  return angularModule => {
+  return ( angularModule, callback ) => {
     let configs = []
     handlers.forEach( setup => {
       let config = setup(angularModule);
@@ -15,7 +15,9 @@ const render = ( handlers, inConfig ) => {
       }).join("/") : ".";
     }
     if( configs.length > 0 && inConfig ){
+      console.log( configs, angularModule );
       angularModule.config([ '$stateProvider', '$locationProvider', '$controllerProvider', ( $stateProvider, $locationProvider, $controllerProvider ) => {
+        $locationProvider.hashPrefix('');
         configs.forEach( ({ router, ctrlname, loaderpath, template }) => {
           function setTemplate(str){
             $stateProvider.stateRegistry.states[ctrlname].views.$default.template = str;
@@ -26,8 +28,12 @@ const render = ( handlers, inConfig ) => {
             controller : ctrlname,
             resolve : {
               loader : ["$q", function(q){
-                let defer =  q.defer(),
-                  path = getPath(window.location.pathname) + loaderpath.slice(1);
+                let defer =  q.defer()
+                if( !loaderpath ){
+                  defer.resolve("success");
+                  return defer.promise;
+                }
+                let path = getPath(window.location.pathname) + loaderpath.slice(1);
                 window["require"]([path], d => {
                   let { template } = d($controllerProvider);
                   setTemplate( template );
@@ -43,6 +49,7 @@ const render = ( handlers, inConfig ) => {
         });
       }])
     }
+    callback( angularModule );
   };
 }
 export { render }

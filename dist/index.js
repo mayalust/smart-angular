@@ -44,7 +44,7 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
     style : createCached()
   }, { explainers, angularLoaderPlugin, template } = require("ps-angular-loader"),
   __webpackConfig = {
-    mode : "production",
+    mode : "development",
     devtool : "#source-map",
     watch : false,
     module : {
@@ -314,7 +314,7 @@ function inputPlugin( css ){
 function pack(){
   let args = [].slice.call(arguments),
     name = args.shift(),
-    instruction = args.join("."),
+    instruction = args.length ? args.join(".") : undefined,
     config = defaultConfig,
     handlers = makeHandlers( name , instruction ),
     webpackConfig = makeWebpackConfig(name, config, extend({}, __webpackConfig));

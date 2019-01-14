@@ -1,5 +1,5 @@
 const { ultils } = require("ps-angular-loader"),
-  { isArray, isFunction, getFilePath } = require("ps-ultility"),
+  { isArray, isFunction, getFilePath, random } = require("ps-ultility"),
   log = require('proudsmart-log')( true ),
   psfile = require("ps-file"),
   workpath = process.cwd(),
@@ -16,7 +16,10 @@ module.exports.pitch = function(remainRequest){
     { exclude } = loaderUtils.getOptions(this),
     query = parse(resourceQuery.slice(1)),
     { smartangular, type, pack, separate, mode } = query,
-    output = [`import { render } from "-!${remainRequest}"`];
+    output = [`import { render } from ${genRequest.call( this, [ pathLib.resolve(filepath, './angular-loader') ], {
+      hash : random()
+    }, true )}`];
+    //output = [`import { render } from "-!${remainRequest}"`];
   log._info(this.resourcePath);
   function recursive(node, callback){
     let item, queue = isPlainObj(node) ? [node] : [];
@@ -104,7 +107,9 @@ module.exports.pitch = function(remainRequest){
       } else {
         output.push(`let renderAll = render(handlers, true)`);
       }
-      output.push(`typeof window !=="undefined" && typeof window["define"] ==="function" && window["define"](function(){ return renderAll })`)
+      output.push(`typeof psdefine === "function" && psdefine(function(){
+        return renderAll 
+      })`)
     }
     callback(null, output.join(";\n"));
   });

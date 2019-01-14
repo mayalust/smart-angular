@@ -19,4 +19,4 @@ let arguments = process.argv.slice(2).map(getString),
   },
   fn = fns[command];
 typeof fn === "function" ? fn.apply(null, [ name, ...arguments ]) : null;
-//fns["pack"]("core", "controller.ps_ceshi");
+//fns["pack"]("test", "test", "controller", "config");

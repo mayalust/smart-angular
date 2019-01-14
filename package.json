@@ -34,7 +34,7 @@
     "mini-css-extract-plugin": "^0.5.0",
     "node-sass": "^4.11.0",
     "proudsmart-log": "^1.0.14",
-    "ps-angular-loader": "^1.0.52",
+    "ps-angular-loader": "^1.0.53",
     "ps-file": "^1.0.15",
     "ps-filetree": "^1.0.13",
     "ps-ultility": "^1.0.46",
@@ -45,7 +45,8 @@
   "devDependencies": {
     "angular": "^1.7.5",
     "angular-ui-router": "^1.0.20",
-    "webpack-dev-server": "^3.1.14",
-    "requirejs": "^2.3.6"
+    "ps-require": "^1.0.1",
+    "requirejs": "^2.3.6",
+    "webpack-dev-server": "^3.1.14"
   }
 }

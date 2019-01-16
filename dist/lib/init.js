@@ -65,19 +65,78 @@ module.exports = function( name ) {
 </script>`
     }
   };
-  if( !ins.exist(`ps-${name}`) ){
-    ins.mkdir(`ps-${name}`).then( d => {
-      let promises = [];
-      function eachprop(obj, callback){
-        for(var i in obj){
-          callback( i, obj[i] );
+  function conIndexHtml( name ){
+    return `<!-- demo html for project "ps-${name}" -->
+<!DOCTYPE html>
+<html
+    lang="en">
+<head>
+  <meta
+      charset="UTF-8">
+  <title>
+    Title</title>
+  <script src="../node_modules/requirejs/require.js"></script>
+  <script src="../node_modules/ps-require/index.js"></script>
+</head>
+<body>
+  <div ui-view></div>
+  <script>
+    require.config({
+      waitSeconds: 0,
+      paths: {
+        'angular': './node_modules/angular/angular',
+        'angular-ui-router' : "./node_modules/angular-ui-router/release/angular-ui-router",
+      },
+      shim: {
+        'angular': {
+          exports: 'angular'
+        },
+        'angular-ui-router': {
+          deps: ['angular']
         }
       }
-      eachprop(files, ( attr, { title, content } ) => {
-        promises.push(d.mkdir(`${attr}s`).then( n => {
-          return n.write( `${title}.${attr}`, content );
-        }));
+    });
+    var deps = [
+      "./build/${name}.template.config",
+      "./build/${name}.controller.config",
+      "./build/${name}.service.js",
+      "./build/${name}.style.css"
+    ], time = new Date();
+    require(["angular","angular-ui-router"], function(angular){
+      var module = angular.module("app", ["ui.router"]);
+      psrequire(deps, function(){
+        var args = [].slice.call(arguments);
+        args.forEach(function(d, i){
+          d( module, deps[i] );
+        });
+        console.log(( ( new Date() - time ) / 1000 ).toFixed(2) + "s is spent to init angular");
+        angular.bootstrap(document.body, ["app"]);
       })
+    });
+  </script>
+</body>
+</html>`;
+  }
+  function eachprop( obj, callback ){
+    for(let i in obj){
+      callback( i, obj[i] );
+    }
+  }
+  function propMap( obj, callback ){
+    let rs = [];
+    eachprop( obj, ( attr, elem ) => {
+      rs.push( callback( attr, elem));
+    })
+    return rs;
+  }
+  if( !ins.exist(`ps-${name}`) ){
+    ins.mkdir(`ps-${name}`).then( d => {
+      let promises = [ d.write(`index.html`, conIndexHtml( name )) ]
+        .concat(propMap(files, ( attr, { title, content } ) => {
+        return d.mkdir(`${attr}s`).then( n => {
+          return n.write( `${title}.${attr}`, content );
+        });
+      }));
       return Promise.all(promises);
     }).then( d => {
       console.log("success");

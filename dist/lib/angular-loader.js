@@ -46,7 +46,7 @@ const render = function( handlers, inConfig ){
             controller : ctrlname,
             resolve : {
               loader : ["$q", function(q){
-                let defer =  q.defer()
+                let defer =  q.defer(), time = new Date();
                 if( !loaderpath ) {
                   defer.resolve("success");
                   return defer.promise;
@@ -54,11 +54,12 @@ const render = function( handlers, inConfig ){
                 let deps = loaderpath.map( d => baseurl + d );
                 psrequire( deps, function(){
                   let args = [].slice.call(arguments),
+                    endTime = ( new Date() - time ) / 1000,
                     first = args.shift(),
                     { template } = first($controllerProvider);
+                  console.log( endTime.toFixed(2) + "s is expended to import new controllers and dependencies.")
                   setTemplate( template );
                   for(var i in args){
-                    debugger;
                     args[i]($compileProvider);
                   }
                   defer.resolve("success");

@@ -58,7 +58,6 @@ module.exports = function(source){
                     ? config.attributes.deps
                       .split(",").map( splitData )
                       .filter( ({path}) => {
-                        console.log( path );
                         return allDeps.indexOf( path ) == -1
                           ? allDeps.push( path ) : false;
                       })

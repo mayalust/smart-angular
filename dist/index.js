@@ -1,6 +1,6 @@
 const log = require('proudsmart-log')( true );
 MiniCssExtractPlugin = require("mini-css-extract-plugin"),
-  { extend, getFilePath, isArray, isFunction, tree, random, eachProp } = require("ps-ultility"),
+  { extend, getFilePath, isArray, isFunction, tree, random, eachProp, dateparser } = require("ps-ultility"),
   fs = require("fs"),
   init = require("./lib/init.js"),
   { parse } = require("querystring"),
@@ -44,7 +44,7 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
     style : createCached()
   }, { explainers, angularLoaderPlugin, template } = require("ps-angular-loader"),
   __webpackConfig = {
-    mode : "development",
+    mode : "production",
     devtool : "#source-map",
     watch : false,
     module : {
@@ -105,7 +105,7 @@ function keys( obj ){
   }
   return arr;
 }
-function runWebpack(webpackConfig){
+function runWebpack(webpackConfig, url){
   function makeOutputPath( { entry, output } ){
     let { filename, path } = output;
     return keys(entry).map( d => {
@@ -253,7 +253,7 @@ function makeHandlers( name, instruction ){
       },
       output : {
         path : pathLib.resolve( workpath, `ps-${name}/build`),
-          filename :  `[name].js`
+        filename :  `[name].js`
       },
       plugins : inputPlugin()
     } : undefined;
@@ -380,6 +380,7 @@ module.exports.init = init;
 module.exports.server = function(app, name, config){
   config = extend({}, defaultConfig, config);
   let uid = random(16),
+    _basepath = pathLib.resolve(workpath, `./ps-${name}`),
     handlers = makeHandlers( name ),
     { exclude } = config,
     keys = explainers.keys(),
@@ -398,6 +399,7 @@ module.exports.server = function(app, name, config){
         js : "application/javascript",
         css : "text/css"
       };
+    log.minor( `start : ${url}`);
     function makeloadconfig(url){
       let dics = [{
         test : new RegExp(`(ps-${name})\\\/build\\\/output\\.js`),
@@ -436,7 +438,7 @@ module.exports.server = function(app, name, config){
           }
         }
       },{
-        test : new RegExp(`(ps-${name})\\\/build\\\/([^\\\\\/]+)s?\\\/${name}\\.([^.]+)\\.((?:js)|(?:css))`),
+        test : new RegExp(`(ps-${name})\\\/build\\\/([^\\\\\/]+)s?\\\/([^.]+)\\.((?:js)|(?:css))`),
         handler : m => {
           return {
             targetPath : `${m[1]}/${m[2]}s`,
@@ -470,24 +472,26 @@ module.exports.server = function(app, name, config){
         log._error( type, targetPath ).run( false );
         psfile(pathLib.resolve(workpath, `./ps-${name}`))
           .children(({ path, basename, ext }) => {
-           if( exclude.some( d => d.test( path ))){
-             return false;
-           }
-           if( type === "style" && !isStyle( ext )){
-             return false;
-           }
-           if( separate ){
-             if( basename !== separate ){
-               return false;
-             }
-           } else {
-             if( ext != type ) {
-               return false;
-             }
-           }
-           return true;
-        }).then(({  basename, modifytime }) => {
-          obj[ basename ] = modifytime;
+            if( exclude.concat([/\/build\//]).some( d => d.test( path ))){
+              return false;
+            }
+            if( type === "style" && !isStyle( ext )){
+              return false;
+            }
+            if( separate && basename !== separate ){
+              return false;
+            }
+            if( ext != type ) {
+              return false;
+            }
+            return true;
+          }).then( d => {
+          d.forEach( ({  basename, modifytime, modifytimeStr, ext }) => {
+            obj[ `${ ext }____${ basename }` ] = modifytime;
+          });
+          res( obj );
+        }).catch( e => {
+          rej( e );
         });
       })
     }
@@ -498,28 +502,30 @@ module.exports.server = function(app, name, config){
           function checkModified(modifytimes){
             let rs = false, cache_obj = getCached(), cv;
             function getCached(){
-              return cached[ entry ];
+              return cached[ type ];
             }
             if( separate ) {
+              let __key = `${type}____${entry}`;
               cv = config.renderWhileStart
-                ? ( cache_obj || 0 )
-                : cache_obj;
-              if( typeof cv !=="undefined" && ( modifytimes[ entry ] - cv !== 0 ) ) {
+                ? ( cached[__key] || 0 )
+                : cached[__key];
+              if( typeof cv !=="undefined" && ( modifytimes[ __key ] - cv !== 0 ) ) {
                 rs = true;
-                cached[ entry ] = modifytimes[ entry ];
-              } else if(typeof cached[ entry ] === "undefined"){
-                cached[ entry ] = modifytimes[ entry ];
+                cached[__key] = modifytimes[ __key ];
+              } else if(typeof cache_obj[ entry ] === "undefined"){
+                cached[__key] = modifytimes[ __key ];
               }
             } else {
               for(let i in modifytimes){
+                let __key = `${i}____${entry}`;
                 cv = config.renderWhileStart
                   ? ( cache_obj.get(i) || 0 )
                   : cache_obj.get(i);
-                if( typeof cv !=="undefined" && ( modifytimes[ i ] - cv !== 0 ) ) {
+                if( typeof cv !=="undefined" && ( modifytimes[ __key ] - cv !== 0 ) ) {
                   rs = true;
-                  cache_obj.set(i, modifytimes[ i ]);
+                  cache_obj.set(i, modifytimes[ __key ]);
                 } else if(typeof cached[ type ].get( i ) ==="undefined"){
-                  cache_obj.set(i, modifytimes[ i ]);
+                  cache_obj.set(i, modifytimes[ __key ]);
                 }
               }
             }
@@ -529,13 +535,23 @@ module.exports.server = function(app, name, config){
         });
       })
     }
+    function getFileByBasename( basename, type ){
+      return psfile(pathLib.resolve(_basepath, `./${type}s/${basename}.${type}`)).stat()
+    }
     function checkModified( loadConfig ){
       let { type, separate, entry, output, config } = loadConfig;
       return isModified( loadConfig ).then( d => {
         if( d ){
-          log.info( `_render : ${url} , "file is modified"` );
-          extend( webpackConfig, config )
-          cached[`${ entry }_promise`] = runWebpack( webpackConfig )
+          log.info( `_render : ${url} , "file is modified" ${ type },${ entry }` );
+          cached[`${ entry }_promise`] = ( typeof config.entry === "function"
+            ? getFileByBasename( entry, type).then( n => {
+              return createImmediatePromise( config.entry(n) );
+            }) : createImmediatePromise( config.entry )).then( d => {
+            extend( webpackConfig, config, {
+              entry : d
+            });
+            return runWebpack( webpackConfig, url );
+          });
         } else {
           log.minor( `neglect : ${url} , ${ cached[`${ entry }_promise`]
             ? "file is modified, in rendering state"

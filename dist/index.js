@@ -400,6 +400,10 @@ module.exports.server = function(app, name, config){
         css : "text/css"
       };
     log.minor( `start : ${url}`);
+    if( !new RegExp(`ps-${name})\\\/build\\\/`).test( url ) ){
+      next();
+      return;
+    }
     function makeloadconfig(url){
       let dics = [{
         test : new RegExp(`(ps-${name})\\\/build\\\/output\\.js`),

@@ -595,9 +595,7 @@ module.exports.server = function(app, name, config){
         });
       }).catch( e => {
         log.error(`pack error : while packing file : '${url}'`);
-        for(var i in e){
-          log.error( i + ":" + e );
-        }
+        res.write(`throw new Error("${url} is not avaliable")`);
       })
     } else {
       log.minor(`prepare : "${url}" -- is not a smartangular file, neglected`)

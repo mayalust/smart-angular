@@ -464,7 +464,12 @@ module.exports.server = function(app, name, config){
         };
       }
     }
-    function createImmediatePromise(d){
+    function createError(d){
+      return new Promise( (res, rej) => {
+        rej(d);
+      })
+    }
+    function createSuccess(d){
       return new Promise( res => {
         res(d);
       })
@@ -540,7 +545,8 @@ module.exports.server = function(app, name, config){
       })
     }
     function getFileByBasename( basename, type ){
-      return psfile(pathLib.resolve(_basepath, `./${type}s/${basename}.${type}`)).stat()
+      return psfile(pathLib.resolve(_basepath, `./${type}s`))
+        .find( node => basename === node.basename && type === node.ext)
     }
     function checkModified( loadConfig ){
       let { type, separate, entry, output, config } = loadConfig;
@@ -548,9 +554,9 @@ module.exports.server = function(app, name, config){
         if( d ){
           log.info( `_render : ${url} , "file is modified" ${ type },${ entry }` );
           cached[`${ entry }_promise`] = ( typeof config.entry === "function"
-            ? getFileByBasename( entry, type).then( n => {
-              return createImmediatePromise( config.entry(n) );
-            }) : createImmediatePromise( config.entry )).then( d => {
+            ? getFileByBasename( entry, type ).then( n => {
+              return n ? createSuccess( config.entry(n) ) : createError( "file not found" );
+            }) : createSuccess( config.entry )).then( d => {
             extend( webpackConfig, config, {
               entry : d
             });
@@ -565,7 +571,7 @@ module.exports.server = function(app, name, config){
           }) : null;
         }
         return d ? cached[`${ entry }_promise`]
-          : ( cached[`${ entry }_promise`] || createImmediatePromise("success") )
+          : ( cached[`${ entry }_promise`] || createSuccess("success") )
       });
     }
     function loadOutput( loadConfig ){
@@ -587,6 +593,11 @@ module.exports.server = function(app, name, config){
         }).catch( e => {
           log._error(`cannot get file : ${pathLib.join(workpath,url)}`).run( false );
         });
+      }).catch( e => {
+        log.error(`pack error : while packing file : '${url}'`);
+        for(var i in e){
+          log.error( i + ":" + e );
+        }
       })
     } else {
       log.minor(`prepare : "${url}" -- is not a smartangular file, neglected`)

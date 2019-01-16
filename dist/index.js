@@ -399,11 +399,11 @@ module.exports.server = function(app, name, config){
         js : "application/javascript",
         css : "text/css"
       };
-    log.minor( `start : ${url}`);
     if( !new RegExp(`ps-${name}\\\/build\\\/`).test( url ) ){
       next();
       return;
     }
+    log.minor( `start : ${url}`);
     function makeloadconfig(url){
       let dics = [{
         test : new RegExp(`(ps-${name})\\\/build\\\/output\\.js`),

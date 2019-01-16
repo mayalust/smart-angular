@@ -400,7 +400,7 @@ module.exports.server = function(app, name, config){
         css : "text/css"
       };
     log.minor( `start : ${url}`);
-    if( !new RegExp(`ps-${name})\\\/build\\\/`).test( url ) ){
+    if( !new RegExp(`ps-${name}\\\/build\\\/`).test( url ) ){
       next();
       return;
     }

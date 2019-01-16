@@ -591,11 +591,12 @@ module.exports.server = function(app, name, config){
           res.write(d);
           res.end();
         }).catch( e => {
-          log._error(`cannot get file : ${pathLib.join(workpath,url)}`).run( false );
+          log.error(`cannot get file : ${pathLib.join(workpath,url)}`);
+          res.write(`throw new Error("${pathLib.join(workpath,url)} is not avaliable")`);
         });
       }).catch( e => {
-        log.error(`pack error : while packing file : '${url}'`);
-        res.write(`throw new Error("${url} is not avaliable")`);
+        log.error(`pack error : while packing file : '${pathLib.join(workpath,url)}'`);
+        res.write(`throw new Error("${pathLib.join(workpath,url)} is not avaliable")`);
       })
     } else {
       log.minor(`prepare : "${url}" -- is not a smartangular file, neglected`)

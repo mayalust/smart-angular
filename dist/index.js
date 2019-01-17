@@ -11,6 +11,7 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   filepath = getFilePath(__filename),
   psfile = require("ps-file"),
   defaultConfig = {
+    mode : "development",
     exclude : [/\.test/, /([\\\/])exclude\1/],
     renderWhileStart : true
   },
@@ -44,7 +45,6 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
     style : createCached()
   }, { explainers, angularLoaderPlugin, template } = require("ps-angular-loader"),
   __webpackConfig = {
-    mode : "production",
     devtool : "#source-map",
     watch : false,
     module : {
@@ -115,9 +115,9 @@ function runWebpack(webpackConfig, url){
   return new Promise( (res, rej) => {
     let time = new Date(),
       successInfo = makeOutputPath( webpackConfig ),
-      { entry, output } = webpackConfig;
+      { entry, output, mode } = webpackConfig;
     log._info({ entry : webpackConfig.entry, output : webpackConfig.output}).run(false);
-    log.info(`start : ${keys(entry).join(",")}`);
+    log.info(`start : ${keys(entry).join(",")}`, `in "${ mode }" mode`);
     webpack(webpackConfig, (err, state) => {
       if(err === null){
         if(state.hasErrors()){
@@ -140,6 +140,7 @@ function toSecond( milisec ){
   return (milisec/1000).toFixed(2)
 }
 function makeWebpackConfig(name, config, webpackConfig) {
+  webpackConfig.mode = config.mode;
   webpackConfig.module.rules.push({
     resource : d => {
       return true;
@@ -157,12 +158,9 @@ function makeWebpackConfig(name, config, webpackConfig) {
 }
 function makeHandlers( name, instruction ){
   function makeMatch( str ){
-    let arr = str.split("."),
-      ext = arr.pop(),
-      condition = `^${arr.map( d => d == "[name]" ? "[^.]+" : d).join(".")}(\\\\.${ext})?$`;
     return function( target ){
       return typeof target === "undefined"
-        ? true : new RegExp(condition, "g").test( target )
+        ? true : new RegExp(target, "g").test( str )
     };
   }
   function makePath( { url, query } ){
@@ -184,11 +182,11 @@ function makeHandlers( name, instruction ){
         mode: "config"
       }
     });
-    return makeMatch( `${name}.${type}.config.js` )( instruction ) ? {
+    return makeMatch( `${type}.config` )( instruction ) ? {
       entry : entry,
       output : {
         path : pathLib.resolve( workpath, `ps-${name}/build`),
-        filename : `${name}.[name].config.js`
+        filename : `[name].config.js`
       },
       plugins : inputPlugin()
     } : undefined
@@ -203,15 +201,15 @@ function makeHandlers( name, instruction ){
         pack : name
       }
     })
-    return makeMatch( `${name}.${type}.js` )( instruction ) ? {
+    return makeMatch( `${type}` )( instruction ) ? {
       entry : entry,
       output : {
         path : pathLib.resolve( workpath, `ps-${name}/build`),
-        filename :  `${name}.[name].js`
+        filename :  `[name].js`
       },
       plugins : inputPlugin({
-        filename: `${name}.[name].css`,
-        chunkFilename: `${name}.[id].css`
+        filename: `[name].css`,
+        chunkFilename: `[id].css`
       })
     } : undefined
   }
@@ -240,14 +238,13 @@ function makeHandlers( name, instruction ){
       })
     };
     return typeof instruction === "undefined"
-      ? dt : ( makeMatch( `${type}.[name].js` )( instruction )
-        ? node => {
-          return type + "." + node.basename == instruction
-            ? dt : undefined
-        } : undefined )
+      ? dt : ({ basename }) => {
+        return new RegExp( instruction ).test( `${type}/${ basename }` )
+          ? dt : undefined
+      }
   }
   function createOutputConfig(){
-    return makeMatch( `output.js` )( instruction ) ? {
+    return makeMatch( `_` )( instruction ) ? {
       entry : {
         output : makePath({
           url : pathLib.resolve( filepath, `./lib/output.js` ),
@@ -262,7 +259,7 @@ function makeHandlers( name, instruction ){
     } : undefined;
   }
   function createOutputCombined(){
-    return makeMatch( `${name}.output.js` )( instruction ) ? {
+    return makeMatch( `output` )( instruction ) ? {
       entry : {
         output : makePath({
           url : pathLib.resolve(filepath, `./lib/angular-loader.js`),
@@ -276,11 +273,11 @@ function makeHandlers( name, instruction ){
       },
       output : {
         path : pathLib.resolve( workpath, `ps-${name}/build`),
-        filename :  `${name}.[name].js`
+        filename :  `[name].js`
       },
       plugins : inputPlugin({
-        filename: `${name}.[name].css`,
-        chunkFilename: `${name}.[id].css`
+        filename: `[name].css`,
+        chunkFilename: `[id].css`
       })
     } : undefined;
   }
@@ -316,11 +313,19 @@ function inputPlugin( css ){
 }
 function pack(){
   let args = [].slice.call(arguments),
-    name = args.shift(),
-    instruction = args.length ? args.join(".") : undefined,
-    config = defaultConfig,
-    handlers = makeHandlers( name , instruction ),
+    querystr = args.shift(),
+    mode = args.shift(),
+    querystrArr = querystr ? querystr.split("/") : null,
+    name = querystrArr ? querystrArr.shift() : null,
+    ex = mode ? { mode : mode } : {},
+    config = extend({}, defaultConfig, ex),
+    handlers = makeHandlers( name , makeQuery(querystrArr)),
     webpackConfig = makeWebpackConfig(name, config, extend({}, __webpackConfig));
+  function makeQuery( arr ){
+    return arr.length ? arr.map( d => {
+      return d.replace(new RegExp("\\*", "g"), "[^\\\/.]+").replace(".", "\\.");
+    }).join("\\\/") + "$" : undefined;
+  }
   psfile(pathLib.resolve(workpath, `./ps-${name}`)).children( n => {
     return !n.isDir && handlers[n.ext] && handlers[n.ext]["separate"]
   }).then( allfiles => {
@@ -367,7 +372,7 @@ function pack(){
       }) : undefined;
     }
     if( waitings.length == 0 ){
-      log.error(JSON.stringify(`no files match the query condition [${instruction}], please try another.`));
+      log.error(JSON.stringify(`no files match the query condition [${querystr}], please try another.`));
     } else {
       return recursivePromise(createPromise(waitings.shift())).then( d => {
         log.success(`success : all packed up in ${toSecond(new Date() - time)}s`);
@@ -387,7 +392,8 @@ module.exports.server = function(app, name, config){
     handlers = makeHandlers( name ),
     { exclude } = config,
     keys = explainers.keys(),
-    webpackConfig = makeWebpackConfig(name, config, extend({}, __webpackConfig));
+    ex = config.mode ? { mode : config.mode } : {},
+    webpackConfig = makeWebpackConfig(name, config, extend({}, __webpackConfig, ex));
   function getFileName(path) {
     let match = /(?:\\|\/)([^\\\/\.]+)\.(?:[^\.]+)$/.exec(path);
     return match ? match[1] : ""
@@ -420,7 +426,7 @@ module.exports.server = function(app, name, config){
           }
         }
       },{
-        test : new RegExp(`(ps-${name})\\\/build\\\/${name}\\.([^.]+)\\.([^.]+)\\.((?:js)|(?:css))`),
+        test : new RegExp(`(ps-${name})\\\/build\\\/([^.]+)\\.([^.]+)\\.((?:js)|(?:css))`),
         handler : m => {
           return {
             targetPath : `${m[1]}/${m[2]}s`,
@@ -433,7 +439,7 @@ module.exports.server = function(app, name, config){
           }
         }
       },{
-        test : new RegExp(`(ps-${name})\\\/build\\\/${name}\\.([^.]+)\\.((?:js)|(?:css))`),
+        test : new RegExp(`(ps-${name})\\\/build\\\/([^.]+)\\.((?:js)|(?:css))`),
         handler : m => {
           return {
             targetPath : `${m[1]}/${m[2]}s`,

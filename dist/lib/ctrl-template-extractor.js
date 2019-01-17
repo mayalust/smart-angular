@@ -24,7 +24,7 @@ module.exports = function(source){
   function makeDeps(){
     return new Promise(( res, rej) => {
       let allDeps = [`controller/${name}.js|css`],
-        queue = config.attributes.deps ? config.attributes.deps.split(",").map( splitData ) : [];
+        queue = config.deps ? config.deps.split(",").map( splitData ) : [];
       [].push.apply( allDeps, queue.map( ({path})=> path) );
       function splitData( str ){
         if( typeof str === "undefined"){
@@ -54,8 +54,8 @@ module.exports = function(source){
               });
               fd.read().then( source => {
                 let config = selectBlock( source, "config" ),
-                  deps = config.attributes.deps
-                    ? config.attributes.deps
+                  deps = config.deps
+                    ? config.deps
                       .split(",").map( splitData )
                       .filter( ({path}) => {
                         return allDeps.indexOf( path ) == -1
@@ -75,16 +75,21 @@ module.exports = function(source){
     })
 
   }
+  function makeParam( str ){
+    let arr = str.split("/").filter( d => d);
+    return arr.length > 0 ? `/${ arr.join("/") }` : "";
+  }
   let name = getFileName( this.resourcePath ),
-    config = selectBlock( source, "config" );
-  config.params = config.params || config.param;
+    configBlock = selectBlock( source, "config" ),
+    config = configBlock.attributes,
+    param = makeParam( config.params || config.param || "" );
   makeDeps( config ).then( d => {
     callback(null, `export default function(){
     return {
       type : "router",
       loaderpath : ["${d.join("\",\"")}"],
-      router : "/${name}${ config.params ? "/" + config.params : "" }",
-      ctrlname : "${name}"
+      router : "/${ name }${ param }",
+      ctrlname : "${ name }"
     }
   }`)
   });

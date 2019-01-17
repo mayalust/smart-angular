@@ -283,7 +283,7 @@ function makeHandlers( name, instruction ){
         plugins : inputPlugin()
       },
       before : function(){
-        return removeCssFile(pathLib.resolve(workpath, `ps-${name}/build/${type}.css`))
+        return removeCssFile(pathLib.resolve(workpath, `ps-${name}/build/output.css`))
       }
     } : undefined;
   }
@@ -311,13 +311,13 @@ function makeHandlers( name, instruction ){
         })
       },
       before : function(){
-        return removeCssFile(pathLib.resolve(workpath, `ps-${name}/build/${type}.css`))
+        return removeCssFile(pathLib.resolve(workpath, `ps-${name}/build/output.css`))
       }
     } : undefined;
   }
   return {
     output : {
-      config : createOutputConfig(),
+      //config : createOutputConfig(),
       combined : createOutputCombined()
     },
     template : {

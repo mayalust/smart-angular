@@ -13,4 +13,4 @@ let arguments = process.argv.slice(2),
   },
   fn = fns[command];
 typeof fn === "function" ? fn.apply( null, arguments ) : null;
-//fns["pack"]("test", "production");
+//fns["pack"]("core/controller", "development");

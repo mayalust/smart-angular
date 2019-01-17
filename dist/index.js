@@ -73,7 +73,7 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
           loader : MiniCssExtractPlugin.loader
         },"css-loader","sass-loader"]
       }]
-    },
+    }/**,
     optimization: {
       splitChunks: {
         chunks: 'async',
@@ -96,7 +96,7 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
           }
         }
       }
-    }
+    }**/
   };
 function keys( obj ){
   let arr = [];
@@ -138,6 +138,16 @@ function runWebpack(webpackConfig, url){
 }
 function toSecond( milisec ){
   return (milisec/1000).toFixed(2)
+}
+function createError(d){
+  return new Promise( (res, rej) => {
+    rej(d);
+  })
+}
+function createSuccess(d){
+  return new Promise( res => {
+    res(d);
+  })
 }
 function makeWebpackConfig(name, config, webpackConfig) {
   webpackConfig.mode = config.mode;
@@ -183,12 +193,14 @@ function makeHandlers( name, instruction ){
       }
     });
     return makeMatch( `${type}.config` )( instruction ) ? {
-      entry : entry,
-      output : {
-        path : pathLib.resolve( workpath, `ps-${name}/build`),
-        filename : `[name].config.js`
-      },
-      plugins : inputPlugin()
+      data : {
+        entry : entry,
+        output : {
+          path : pathLib.resolve( workpath, `ps-${name}/build`),
+          filename : `[name].config.js`
+        },
+        plugins : inputPlugin()
+      }
     } : undefined
   }
   function createCombined( type ){
@@ -202,15 +214,20 @@ function makeHandlers( name, instruction ){
       }
     })
     return makeMatch( `${type}` )( instruction ) ? {
-      entry : entry,
-      output : {
-        path : pathLib.resolve( workpath, `ps-${name}/build`),
-        filename :  `[name].js`
+      data : {
+        entry : entry,
+        output : {
+          path : pathLib.resolve( workpath, `ps-${name}/build`),
+          filename :  `[name].js`
+        },
+        plugins : inputPlugin({
+          filename: `[name].css`,
+          chunkFilename: `[id].css`
+        })
       },
-      plugins : inputPlugin({
-        filename: `[name].css`,
-        chunkFilename: `[id].css`
-      })
+      before : function(){
+        return removeCssFile(pathLib.resolve(workpath, `ps-${name}/build/${type}.css`))
+      }
     } : undefined
   }
   function createSeparate( type ) {
@@ -226,16 +243,23 @@ function makeHandlers( name, instruction ){
         }
       })
       return rs;
+    }, before = ({ basename, path }) => {
+      return function(){
+        return removeCssFile(pathLib.resolve(workpath, `ps-${name}/build/${type}/${basename}.css`))
+      }
     }, dt = {
-      entry : entry,
-      output : {
-        path : pathLib.resolve(workpath, `ps-${name}/build/${type}`),
-        filename : `[name].js`
+      data : {
+        entry : entry,
+        output : {
+          path : pathLib.resolve(workpath, `ps-${name}/build/${type}`),
+          filename : `[name].js`
+        },
+        plugins : inputPlugin({
+          filename: `[name].css`,
+          chunkFilename: `[id].css`
+        })
       },
-      plugins : inputPlugin({
-        filename: `[name].css`,
-        chunkFilename: `[id].css`
-      })
+      before : before
     };
     return typeof instruction === "undefined"
       ? dt : ({ basename }) => {
@@ -245,40 +269,50 @@ function makeHandlers( name, instruction ){
   }
   function createOutputConfig(){
     return makeMatch( `_` )( instruction ) ? {
-      entry : {
-        output : makePath({
-          url : pathLib.resolve( filepath, `./lib/output.js` ),
-          query: {}
-        })
+      data : {
+        entry : {
+          output : makePath({
+            url : pathLib.resolve( filepath, `./lib/output.js` ),
+            query: {}
+          })
+        },
+        output : {
+          path : pathLib.resolve( workpath, `ps-${name}/build`),
+          filename :  `[name].js`
+        },
+        plugins : inputPlugin()
       },
-      output : {
-        path : pathLib.resolve( workpath, `ps-${name}/build`),
-        filename :  `[name].js`
-      },
-      plugins : inputPlugin()
+      before : function(){
+        return removeCssFile(pathLib.resolve(workpath, `ps-${name}/build/${type}.css`))
+      }
     } : undefined;
   }
   function createOutputCombined(){
     return makeMatch( `output` )( instruction ) ? {
-      entry : {
-        output : makePath({
-          url : pathLib.resolve(filepath, `./lib/angular-loader.js`),
-          query: {
-            smartangular: null,
-            type: "output",
-            pack: name,
-            mode: "all"
-          }
+      data : {
+        entry : {
+          output : makePath({
+            url : pathLib.resolve(filepath, `./lib/angular-loader.js`),
+            query: {
+              smartangular: null,
+              type: "output",
+              pack: name,
+              mode: "all"
+            }
+          })
+        },
+        output : {
+          path : pathLib.resolve( workpath, `ps-${name}/build`),
+          filename :  `[name].js`
+        },
+        plugins : inputPlugin({
+          filename: `[name].css`,
+          chunkFilename: `[id].css`
         })
       },
-      output : {
-        path : pathLib.resolve( workpath, `ps-${name}/build`),
-        filename :  `[name].js`
-      },
-      plugins : inputPlugin({
-        filename: `[name].css`,
-        chunkFilename: `[id].css`
-      })
+      before : function(){
+        return removeCssFile(pathLib.resolve(workpath, `ps-${name}/build/${type}.css`))
+      }
     } : undefined;
   }
   return {
@@ -310,6 +344,10 @@ function makeHandlers( name, instruction ){
 function inputPlugin( css ){
   return css ? [new angularLoaderPlugin(),new MiniCssExtractPlugin( css )]
     : [new angularLoaderPlugin()]
+}
+function removeCssFile( url ){
+  let d = psfile( url );
+  return d.exist() ? psfile( url ).remove() : createSuccess()
 }
 function pack(){
   let args = [].slice.call(arguments),
@@ -361,9 +399,14 @@ function pack(){
       }).map( node => {
         let __type = node.ext,
           fn = handlers[__type]['separate'],
-          rs = extend({}, typeof fn === "function" ? fn( node ) : fn );
-        rs.entry = typeof rs.entry === "function" ? rs.entry( node ) : rs.entry;
-        return extend({}, rs);
+          fd = typeof fn === "function" ? fn( node ) : fn,
+          data = extend({}, fd["data"]),
+          before = fd["before"]
+        data.entry = typeof data.entry === "function" ? data.entry( node ) : data.entry;
+        return extend({}, {
+          data : data,
+          before : before( node )
+        });
       });
     }
     function recursivePromise(p) {
@@ -374,11 +417,18 @@ function pack(){
     if( waitings.length == 0 ){
       log.error(JSON.stringify(`no files match the query condition [${querystr}], please try another.`));
     } else {
-      return recursivePromise(createPromise(waitings.shift())).then( d => {
-        log.success(`success : all packed up in ${toSecond(new Date() - time)}s`);
-      }).catch(e => {
-        log.error(JSON.stringify(e));
-      });
+      return Promise.all(waitings.filter( d => typeof d.before === "function" ).map( d => {
+        return d.before();
+      })).then( d => {
+        waitings = waitings.map( d => d.data );
+        return recursivePromise(createPromise(waitings.shift())).then( d => {
+          log.success(`success : all packed up in ${toSecond(new Date() - time)}s`);
+        }).catch(e => {
+          log.error( e.message );
+          log.error( e.stack );
+        });
+      })
+
     }
   });
 }
@@ -413,6 +463,7 @@ module.exports.server = function(app, name, config){
       return;
     }
     log.minor( `start : ${url}`);
+
     function makeloadconfig(url){
       let dics = [{
         test : new RegExp(`(ps-${name})\\\/build\\\/output\\.js`),
@@ -421,8 +472,9 @@ module.exports.server = function(app, name, config){
             type : "output",
             output : pathLib.resolve(workpath, `${m[1]}/build`),
             ext : "js",
-            config : handlers['output']['config'],
-            after : loadOutput
+            config : handlers['output']['separate']['data'],
+            before : handlers['output']['separate']['before'],
+            after : checkModified
           }
         }
       },{
@@ -434,7 +486,7 @@ module.exports.server = function(app, name, config){
             type : type,
             entry : type,
             ext : ext,
-            config : handlers[type]["config"],
+            config : handlers[type]["config"]['data'],
             mode : mode,
             after : checkModified
           }
@@ -448,7 +500,8 @@ module.exports.server = function(app, name, config){
             type : type,
             entry : type,
             ext : ext,
-            config : handlers[type]["combined"],
+            config : handlers[type]["combined"]['data'],
+            before : handlers[type]['separate']['before'],
             after : checkModified
           }
         }
@@ -462,7 +515,8 @@ module.exports.server = function(app, name, config){
             entry : entry,
             separate : entry,
             ext : ext,
-            config : handlers[type]["separate"],
+            config : handlers[type]["separate"]['data'],
+            before : handlers[type]['separate']['before'],
             after : checkModified,
             source : url
           }
@@ -475,16 +529,6 @@ module.exports.server = function(app, name, config){
           return handler( match )
         };
       }
-    }
-    function createError(d){
-      return new Promise( (res, rej) => {
-        rej(d);
-      })
-    }
-    function createSuccess(d){
-      return new Promise( res => {
-        res(d);
-      })
     }
     function getAllModifyTime( loadConfig ){
       let { targetPath, type, separate } = loadConfig;
@@ -595,7 +639,11 @@ module.exports.server = function(app, name, config){
         })
     }
     if( loadConfig ) {
-      loadConfig.after( loadConfig ).then(d => {
+      ( loadConfig.before
+        ? loadConfig.before.then( d => {
+          return loadConfig.after( loadConfig );
+        })
+        : loadConfig.after( loadConfig )).then(d => {
         let { ext } = loadConfig;
         log.info( `_loadfile : ${url} , "file is loaded"` );
         res.setHeader(`Content-Type`, `${dics[ ext ]};charset=UTF-8`);

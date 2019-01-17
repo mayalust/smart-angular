@@ -121,7 +121,10 @@ function runWebpack(webpackConfig, url){
     webpack(webpackConfig, (err, state) => {
       if(err === null){
         if(state.hasErrors()){
-          log.error(`code Error : ${ successInfo } in ${toSecond(new Date() - time)}s`);
+          log.error(`Error : ${ successInfo } in ${toSecond(new Date() - time)}s`);
+          for( var  i in state.compilation.errors){
+            log.error(`detail : ${state.compilation.errors[i]}`);
+          }
         } else {
           log.success(`success : ${ successInfo } in ${toSecond(new Date() - time)}s`);
         }

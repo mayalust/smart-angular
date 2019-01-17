@@ -495,6 +495,7 @@ module.exports.server = function(app, name, config){
         test : new RegExp(`(ps-${name})\\\/build\\\/([^\\\\/.]+)\\.((?:js)|(?:css))`),
         handler : m => {
           let path = m.shift(), name = m.shift(), type = m.shift(), ext = m.shift();
+          console.log(type, handlers[type]);
           return {
             targetPath : `${name}/${type}s`,
             type : type,
@@ -542,13 +543,10 @@ module.exports.server = function(app, name, config){
             if( exclude.concat([/\/build\//]).some( d => d.test( path ))){
               return false;
             }
-            if( type === "style" && !isStyle( ext )){
+            if( type === "style" && !isStyle( ext ) && (ext != type) ){
               return false;
             }
             if( separate && basename !== separate ){
-              return false;
-            }
-            if( ext != type ) {
               return false;
             }
             return true;
@@ -642,7 +640,7 @@ module.exports.server = function(app, name, config){
     }
     if( loadConfig ) {
       ( loadConfig.before
-        ? loadConfig.before.then( d => {
+        ? loadConfig.before().then( d => {
           return loadConfig.after( loadConfig );
         })
         : loadConfig.after( loadConfig )).then(d => {

@@ -74,7 +74,7 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
         },"css-loader","sass-loader"]
       }]
     }/**,
-    optimization: {
+     optimization: {
       splitChunks: {
         chunks: 'async',
         minSize: 30000,
@@ -609,15 +609,19 @@ module.exports.server = function(app, name, config){
       return isModified( loadConfig ).then( d => {
         if( d ){
           log.info( `_render : ${url} , "file is modified" ${ type },${ entry }` );
-          cached[`${ entry }_promise`] = ( typeof config.entry === "function"
-            ? getFileByBasename( entry, type ).then( n => {
-              return n ? createSuccess( config.entry(n) ) : createError( "file not found" );
-            }) : createSuccess( config.entry )).then( d => {
-            extend( webpackConfig, config, {
-              entry : d
-            });
-            return runWebpack( webpackConfig, url );
-          });
+          cached[`${ entry }_promise`] =
+            ( loadConfig.before ? loadConfig.before() : createSuccess() )
+              .then( d => {
+                return ( typeof config.entry === "function"
+                  ? getFileByBasename( entry, type ).then( n => {
+                    return n ? createSuccess( config.entry(n) ) : createError( "file not found" );
+                  }) : createSuccess( config.entry )).then( d => {
+                  extend( webpackConfig, config, {
+                    entry : d
+                  });
+                  return runWebpack( webpackConfig, url );
+                });
+              });
         } else {
           log.minor( `neglect : ${url} , ${ cached[`${ entry }_promise`]
             ? "file is modified, in rendering state"
@@ -639,11 +643,7 @@ module.exports.server = function(app, name, config){
         })
     }
     if( loadConfig ) {
-      ( loadConfig.before
-        ? loadConfig.before().then( d => {
-          return loadConfig.after( loadConfig );
-        })
-        : loadConfig.after( loadConfig )).then(d => {
+      loadConfig.after( loadConfig ).then(d => {
         let { ext } = loadConfig;
         log.info( `_loadfile : ${url} , "file is loaded"` );
         res.setHeader(`Content-Type`, `${dics[ ext ]};charset=UTF-8`);

@@ -77,12 +77,13 @@ module.exports = function(source){
   }
   let name = getFileName( this.resourcePath ),
     config = selectBlock( source, "config" );
+  config.params = config.params || config.param;
   makeDeps( config ).then( d => {
     callback(null, `export default function(){
     return {
       type : "router",
       loaderpath : ["${d.join("\",\"")}"],
-      router : "/${name}${ config.param ? "/" + config.param : "" }",
+      router : "/${name}${ config.params ? "/" + config.params : "" }",
       ctrlname : "${name}"
     }
   }`)

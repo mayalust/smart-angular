@@ -516,7 +516,9 @@ module.exports.server = function(app, name, config){
             separate : entry,
             ext : ext,
             config : handlers[type]["separate"]['data'],
-            before : handlers[type]['separate']['before'],
+            before : handlers[type]['separate']['before']({
+              basename : entry
+            }),
             after : checkModified,
             source : url
           }

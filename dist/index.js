@@ -501,7 +501,7 @@ module.exports.server = function(app, name, config){
             entry : type,
             ext : ext,
             config : handlers[type]["combined"]['data'],
-            before : handlers[type]['separate']['before'],
+            before : handlers[type]['combined']['before'],
             after : checkModified
           }
         }

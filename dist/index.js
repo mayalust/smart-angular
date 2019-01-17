@@ -428,38 +428,41 @@ module.exports.server = function(app, name, config){
       },{
         test : new RegExp(`(ps-${name})\\\/build\\\/([^.]+)\\.([^.]+)\\.((?:js)|(?:css))`),
         handler : m => {
+          let path = m.shift(), name = m.shift(), type = m.shift(), mode = m.shift(), ext = m.shift();
           return {
-            targetPath : `${m[1]}/${m[2]}s`,
-            type : m[2],
-            entry : m[2],
-            ext : m[4],
-            config : handlers[m[2]]["config"],
-            mode : m[3],
+            targetPath : `${ name }/${ type }s`,
+            type : type,
+            entry : type,
+            ext : ext,
+            config : handlers[type]["config"],
+            mode : mode,
             after : checkModified
           }
         }
       },{
-        test : new RegExp(`(ps-${name})\\\/build\\\/([^.]+)\\.((?:js)|(?:css))`),
+        test : new RegExp(`(ps-${name})\\\/build\\\/([^\\\\/.]+)\\.((?:js)|(?:css))`),
         handler : m => {
+          let path = m.shift(), name = m.shift(), type = m.shift(), ext = m.shift();
           return {
-            targetPath : `${m[1]}/${m[2]}s`,
-            type : m[2],
-            entry : m[2],
-            ext : m[3],
-            config : handlers[m[2]]["combined"],
+            targetPath : `${name}/${type}s`,
+            type : type,
+            entry : type,
+            ext : ext,
+            config : handlers[type]["combined"],
             after : checkModified
           }
         }
       },{
         test : new RegExp(`(ps-${name})\\\/build\\\/([^\\\\\/]+)s?\\\/([^.]+)\\.((?:js)|(?:css))`),
         handler : m => {
+          let path = m.shift(), name = m.shift(), type = m.shift(), entry = m.shift(), ext = m.shift();
           return {
-            targetPath : `${m[1]}/${m[2]}s`,
-            type : m[2],
-            entry : m[3],
-            separate : m[3],
-            ext : m[4],
-            config : handlers[m[2]]["separate"],
+            targetPath : `${name}/${type}s`,
+            type : type,
+            entry : entry,
+            separate : entry,
+            ext : ext,
+            config : handlers[type]["separate"],
             after : checkModified,
             source : url
           }

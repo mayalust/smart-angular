@@ -19,6 +19,9 @@ const render = function( handlers, inConfig ){
     if( configs.length > 0 && inConfig ){
       angularModule.config([ '$stateProvider', '$locationProvider', '$controllerProvider', '$compileProvider', '$filterProvider', '$provide', ( $stateProvider, $locationProvider, $controllerProvider, $compileProvider, $filterProvider, $provide ) => {
         $locationProvider.hashPrefix('');
+        let angularConfig = window.__smartAngular__ = window.__smartAngular__ || {};
+        angularConfig.routers = angularConfig.routers || [];
+        [].push.apply( angularConfig.routers, configs );
         configs.forEach( ({ router, ctrlname, loaderpath, template }) => {
           function setTemplate(str){
             $stateProvider.stateRegistry.states[ctrlname].views.$default.template = str;
@@ -32,6 +35,9 @@ const render = function( handlers, inConfig ){
           if( !hasRegistered( "factory", "$registerService" )){
             $provide.factory("$registerService", function(){
               return {
+                getRouters() {
+                  return window.__smartAngular__["routers"];
+                },
                 controller: $controllerProvider.register,
                 directive: $compileProvider.directive,
                 filter: $filterProvider.register,
@@ -57,7 +63,7 @@ const render = function( handlers, inConfig ){
                     endTime = ( new Date() - time ) / 1000,
                     first = args.shift(),
                     { template } = first($controllerProvider);
-                  console.log( endTime.toFixed(2) + "s is expended to import new controllers and dependencies.")
+                  console.log( endTime.toFixed(2) + "s is spent on importing new controllers and dependencies.")
                   setTemplate( template );
                   for(var i in args){
                     args[i]($compileProvider);

@@ -23,9 +23,6 @@ const render = function( handlers, inConfig ){
         angularConfig.routers = angularConfig.routers || [];
         [].push.apply( angularConfig.routers, configs );
         configs.forEach( ({ router, ctrlname, loaderpath, template }) => {
-          function setTemplate(str){
-            $stateProvider.stateRegistry.states[ctrlname].views.$default.template = str;
-          }
           function hasRegistered( service, name ){
             return angularModule._invokeQueue.some( item => {
               return item[1] === service
@@ -52,7 +49,6 @@ const render = function( handlers, inConfig ){
             [`prod_sub_dashboard.sub_${ctrlname}`, `/subview${router}`],
             [`prod_sub_dashboard.minor_dashboard.minor_${ctrlname}`, `/minor_view${router}`]
           ];
-          console.log( names );
           names.forEach( name => {
             let config = {
               url : name[1],
@@ -83,7 +79,10 @@ const render = function( handlers, inConfig ){
                 }]
               }
             };
-            $stateProvider.state(ctrlname, config);
+            function setTemplate(str){
+              $stateProvider.stateRegistry.states[name[0]].views.$default.template = str;
+            }
+            $stateProvider.state(config);
           });
         });
       }])

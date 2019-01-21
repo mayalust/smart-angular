@@ -73,7 +73,7 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
           loader : MiniCssExtractPlugin.loader
         },"css-loader","sass-loader"]
       }]
-    }/**,
+    },
      optimization: {
       splitChunks: {
         chunks: 'async',
@@ -96,7 +96,7 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
           }
         }
       }
-    }**/
+    }
   };
 function keys( obj ){
   let arr = [];

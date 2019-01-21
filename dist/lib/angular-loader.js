@@ -46,35 +46,45 @@ const render = function( handlers, inConfig ){
               }
             });
           }
-          let config = {
-            url : router,
-            template : template,
-            controller : ctrlname,
-            resolve : {
-              loader : ["$q", function(q){
-                let defer =  q.defer(), time = new Date();
-                if( !loaderpath ) {
-                  defer.resolve("success");
-                  return defer.promise;
-                }
-                let deps = loaderpath.map( d => baseurl + d );
-                psrequire( deps, function(){
-                  let args = [].slice.call(arguments),
-                    endTime = ( new Date() - time ) / 1000,
-                    first = args.shift(),
-                    { template } = first($controllerProvider);
-                  console.log( endTime.toFixed(2) + "s is spent on importing new controllers and dependencies.")
-                  setTemplate( template );
-                  for(var i in args){
-                    args[i]($compileProvider);
+          let names = [
+            [ctrlname,router],
+            [`main_${ctrlname}`, `/prod_dashboard/:showTree/:main_active_index${router}`],
+            [`prod_sub_dashboard.sub_${ctrlname}`, `/subview${router}`],
+            [`prod_sub_dashboard.minor_dashboard.minor_${ctrlname}`, `/minor_view${router}`]
+          ];
+          console.log( names );
+          names.forEach( name => {
+            let config = {
+              url : name[1],
+              name : name[0],
+              template : template,
+              controller : ctrlname,
+              resolve : {
+                loader : ["$q", function(q){
+                  let defer =  q.defer(), time = new Date();
+                  if( !loaderpath ) {
+                    defer.resolve("success");
+                    return defer.promise;
                   }
-                  defer.resolve("success");
-                });
-                return defer.promise;
-              }]
-            }
-          };
-          $stateProvider.state(ctrlname, config);
+                  let deps = loaderpath.map( d => baseurl + d );
+                  psrequire( deps, function(){
+                    let args = [].slice.call(arguments),
+                      endTime = ( new Date() - time ) / 1000,
+                      first = args.shift(),
+                      { template } = first($controllerProvider);
+                    console.log( endTime.toFixed(2) + "s is spent on importing new controllers and dependencies.")
+                    setTemplate( template );
+                    for(var i in args){
+                      args[i]($compileProvider);
+                    }
+                    defer.resolve("success");
+                  });
+                  return defer.promise;
+                }]
+              }
+            };
+            $stateProvider.state(ctrlname, config);
+          });
         });
       }])
     }

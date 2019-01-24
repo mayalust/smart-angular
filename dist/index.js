@@ -45,7 +45,6 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
     style : createCached()
   }, { explainers, angularLoaderPlugin, template } = require("ps-angular-loader"),
   __webpackConfig = {
-    devtool : "#source-map",
     watch : false,
     module : {
       rules : [{
@@ -193,6 +192,7 @@ function makeHandlers( name, instruction ){
       }
     });
     return makeMatch( `${type}.config` )( instruction ) ? {
+      needMap : false,
       data : {
         entry : entry,
         output : {
@@ -420,7 +420,12 @@ function pack(){
       return Promise.all(waitings.filter( d => typeof d.before === "function" ).map( d => {
         return d.before();
       })).then( d => {
-        waitings = waitings.map( d => d.data );
+        waitings = waitings.map( d => {
+          let obj = extend({}, d.data);
+          obj["devtool"] = d.needMap === false ? undefined : "#source-map"
+          console.log( obj["devtool"] );
+          return obj
+        });
         return recursivePromise(createPromise(waitings.shift())).then( d => {
           log.success(`success : all packed up in ${toSecond(new Date() - time)}s`);
         }).catch(e => {
@@ -472,6 +477,7 @@ module.exports.server = function(app, name, config){
             type : "output",
             output : pathLib.resolve(workpath, `${m[1]}/build`),
             ext : "js",
+            needMap : handlers['output']['separate']['needMap'],
             config : handlers['output']['separate']['data'],
             before : handlers['output']['separate']['before'],
             after : checkModified
@@ -486,6 +492,7 @@ module.exports.server = function(app, name, config){
             type : type,
             entry : type,
             ext : ext,
+            needMap : handlers[type]['config']['needMap'],
             config : handlers[type]["config"]['data'],
             mode : mode,
             after : checkModified
@@ -495,12 +502,12 @@ module.exports.server = function(app, name, config){
         test : new RegExp(`(ps-${name})\\\/build\\\/([^\\\\/.]+)\\.((?:js)|(?:css))`),
         handler : m => {
           let path = m.shift(), name = m.shift(), type = m.shift(), ext = m.shift();
-          console.log(type, handlers[type]);
           return {
             targetPath : `${name}/${type}s`,
             type : type,
             entry : type,
             ext : ext,
+            needMap : handlers[type]['combined']['needMap'],
             config : handlers[type]["combined"]['data'],
             before : handlers[type]['combined']['before'],
             after : checkModified
@@ -516,6 +523,7 @@ module.exports.server = function(app, name, config){
             entry : entry,
             separate : entry,
             ext : ext,
+            needMap : handlers[type]['separate']['needMap'],
             config : handlers[type]["separate"]['data'],
             before : handlers[type]['separate']['before']({
               basename : entry
@@ -616,7 +624,9 @@ module.exports.server = function(app, name, config){
                   ? getFileByBasename( entry, type ).then( n => {
                     return n ? createSuccess( config.entry(n) ) : createError( "file not found" );
                   }) : createSuccess( config.entry )).then( d => {
-                  extend( webpackConfig, config, {
+                  let obj = extend({}, config);
+                  obj["devtool"] = loadConfig.needMap === false ? undefined : "#source-map";
+                  extend( webpackConfig, obj, {
                     entry : d
                   });
                   return runWebpack( webpackConfig, url );
@@ -635,8 +645,8 @@ module.exports.server = function(app, name, config){
       });
     }
     function loadOutput( loadConfig ){
-      let { config } = loadConfig;
-      extend( webpackConfig, config );
+      let { config } = loadConfig, obj = extend({}, config);
+      extend( webpackConfig, obj );
       return runWebpack( webpackConfig )
         .then( d => {
           return checkModified(makeloadconfig( `ps-${name}/build/${name}.template.config.js`));

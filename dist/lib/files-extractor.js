@@ -12,7 +12,7 @@ const { ultils } = require("ps-angular-loader"),
 module.exports = d => d;
 module.exports.pitch = function(remainRequest){
   let callback = this.async(),
-    hash = random()
+    hash = random(),
     { resourceQuery } = this,
     { exclude } = loaderUtils.getOptions(this),
     query = parse(resourceQuery.slice(1)),

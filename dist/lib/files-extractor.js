@@ -12,12 +12,13 @@ const { ultils } = require("ps-angular-loader"),
 module.exports = d => d;
 module.exports.pitch = function(remainRequest){
   let callback = this.async(),
+    hash = random()
     { resourceQuery } = this,
     { exclude } = loaderUtils.getOptions(this),
     query = parse(resourceQuery.slice(1)),
     { smartangular, type, pack, separate, mode } = query,
     output = [`import { render } from ${genRequest.call( this, [ pathLib.resolve(filepath, './angular-loader') ], {
-      hash : random()
+      hash : hash,
     }, true )}`];
     //output = [`import { render } from "-!${remainRequest}"`];
   log._info(this.resourcePath);
@@ -40,7 +41,9 @@ module.exports.pitch = function(remainRequest){
     output : {
       makeMap({ path, ext }){
         return ext === "template"
-          ? `require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor'), path ], query, true )})`
+          ? `require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor'), path ], extend( {
+            hash : hash
+          }, query ), true )})`
           : (isStyle( ext )
             ? `require(${genRequest.call( this, [ path ], null, false )})`
             : `handlers.push(require(${genRequest.call( this, [ path ], null, false )}).default)`)
@@ -48,7 +51,9 @@ module.exports.pitch = function(remainRequest){
     },
     template : {
       makeMap({path}){
-        return `require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor'), path ], query, true )})`;
+        return `require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor'), path ], {
+          hash : hash
+        }, true )})`;
       }
     },
     style : {

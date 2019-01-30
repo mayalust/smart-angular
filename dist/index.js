@@ -426,7 +426,6 @@ function pack(){
         waitings = waitings.map( d => {
           let obj = extend({}, d.data);
           obj["devtool"] = d.needMap === false ? undefined : "#source-map"
-          console.log( obj["devtool"] );
           return obj
         });
         return recursivePromise(createPromise(waitings.shift())).then( d => {

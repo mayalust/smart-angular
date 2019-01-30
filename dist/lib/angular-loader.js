@@ -46,8 +46,8 @@ const render = function( handlers, inConfig ){
           let names = [
             [ctrlname,router],
             [`main_${ctrlname}`, `/prod_dashboard/:id/:showTree/:main_active_index${router}`],
-            [`prod_sub_dashboard.sub_${ctrlname}`, `/subview${router}`],
-            [`prod_sub_dashboard.minor_dashboard.minor_${ctrlname}`, `/minor_view${router}`]
+            [`prod_sub_dashboard.sub_${ctrlname}`, `/subview/:sub_active_index${router}`],
+            [`prod_sub_dashboard.minor_dashboard.minor_${ctrlname}`, `/minor_view/:minor_active_index${router}`]
           ];
           names.forEach( name => {
             let config = {

@@ -1,4 +1,4 @@
-const { getFilePath,  getFileName} = require("ps-ultility"),
+const { getFilePath,  getFileName, camelhill } = require("ps-ultility"),
   workpath = process.cwd(),
   filepath = getFilePath(__filename),
   pathLib = require("path"),
@@ -50,7 +50,7 @@ module.exports = function(source){
             let item = queue.shift();
             if( item ){
               let fd = nodes.find( ({ basename, ext }) => {
-                return basename === item.name && ext === item.type;
+                return camelhill( basename ) === item.name && ext === item.type;
               });
               fd.read().then( source => {
                 let config = selectBlock( source, "config" ),

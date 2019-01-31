@@ -1,4 +1,4 @@
-const { getFilePath,  getFileName, camelhill } = require("ps-ultility"),
+const { getFilePath,  getFileName, camelhill, unCamelhill } = require("ps-ultility"),
   workpath = process.cwd(),
   filepath = getFilePath(__filename),
   pathLib = require("path"),
@@ -38,7 +38,7 @@ module.exports = function(source){
           name : name,
           type : type,
           ext : ext,
-          path : type + "/" + name + "." + ext
+          path : type + "/" + unCamelhill( name ) + "." + ext;
         }
       }
       psfile(pathLib.resolve(basepath))

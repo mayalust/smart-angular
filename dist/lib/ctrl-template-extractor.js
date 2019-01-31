@@ -32,7 +32,7 @@ module.exports = function(source){
         }
         let a = str.split("."),
           name = a[0],
-          type = dics[a[1]] || a[1],
+          type = dics[a[1]] || a[1] || "dir",
           ext = extsDics[ type ];
         return {
           name : name,

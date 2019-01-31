@@ -1,5 +1,6 @@
 const log = require('proudsmart-log')( true );
 MiniCssExtractPlugin = require("mini-css-extract-plugin"),
+  jsonloader = require("./lib/json-loader.js"),
   { extend, getFilePath, isArray, isFunction, tree, random, eachProp, dateparser } = require("ps-ultility"),
   fs = require("fs"),
   init = require("./lib/init.js"),
@@ -9,7 +10,6 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   workpath = process.cwd(),
   psfile = require("ps-file"),
   filepath = getFilePath(__filename),
-  psfile = require("ps-file"),
   defaultConfig = {
     mode : "development",
     exclude : [/\.test/, /([\\\/])exclude\1/],
@@ -56,6 +56,9 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
       },{
         test : /\.angular/,
         use : ["ps-angular-loader"]
+      },{
+        test : /\.json/,
+        use : jsonloader
       },{
         test : /\.css$/,
         use : [{

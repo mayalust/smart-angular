@@ -38,7 +38,7 @@ module.exports = function(source){
           name : name,
           type : type,
           ext : ext,
-          path : type + "/" + unCamelhill( name ) + "." + ext;
+          path : `${type}/${unCamelhill( name )}.${ext}`
         }
       }
       psfile(pathLib.resolve(basepath))

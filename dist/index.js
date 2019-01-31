@@ -58,7 +58,7 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
         use : ["ps-angular-loader"]
       },{
         test : /\.json/,
-        use : jsonloader
+        use : [ pathLib.resolve( filepath, "./lib/json-loader.js") ]
       },{
         test : /\.css$/,
         use : [{

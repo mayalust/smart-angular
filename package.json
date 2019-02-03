@@ -1,6 +1,6 @@
 {
   "name": "smart-angular",
-  "version": "1.5.66",
+  "version": "1.5.67",
   "description": "proudsmart smart-angular",
   "main": "./dist/index.js",
   "repository": {
@@ -22,7 +22,7 @@
     "smart-angular": "./dist/run.js"
   },
   "babel":{
-    "presets": ["@babel/env"]
+    "presets": ["@babel/preset-env"]
   },
   "homepage": "https://github.com/mayalust/smart-angular#readme",
   "dependencies": {

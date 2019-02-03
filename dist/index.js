@@ -50,9 +50,11 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
       rules : [{
         test : /\.js$/,
         use:{
-          loader:'babel-loader'
-        },
-        exclude:/node_modules/
+          loader:'babel-loader',
+          options: {
+            presets: ['@babel/preset-env']
+          }
+        }
       },{
         test : /\.angular/,
         use : ["ps-angular-loader"]
@@ -288,6 +290,7 @@ function makeHandlers( name, instruction ){
         plugins : inputPlugin()
       },
       before : function(){
+        //return createSuccess("success");
         return removeCssFile(pathLib.resolve(workpath, `ps-${name}/build/output.css`))
       }
     } : undefined;
@@ -316,6 +319,7 @@ function makeHandlers( name, instruction ){
         })
       },
       before : function(){
+        //return createSuccess("success");
         return removeCssFile(pathLib.resolve(workpath, `ps-${name}/build/output.css`))
       }
     } : undefined;

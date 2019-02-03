@@ -21,6 +21,9 @@
   "bin": {
     "smart-angular": "./dist/run.js"
   },
+  "babel":{
+    "presets": ["@babel/env"]
+  },
   "homepage": "https://github.com/mayalust/smart-angular#readme",
   "dependencies": {
     "@babel/core": "^7.0.0",

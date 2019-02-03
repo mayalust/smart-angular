@@ -17,9 +17,9 @@ module.exports.pitch = function(remainRequest){
     { exclude } = loaderUtils.getOptions(this),
     query = parse(resourceQuery.slice(1)),
     { smartangular, type, pack, separate, mode } = query,
-    output = [`import { render } from ${genRequest.call( this, [ pathLib.resolve(filepath, './angular-loader') ], {
+    output = [`import { render } from ${genRequest.call( this, [ pathLib.resolve(filepath, './angular-loader.js') ], {
       hash : hash,
-    }, true )}`];
+    }, false )}`];
     //output = [`import { render } from "-!${remainRequest}"`];
   log._info(this.resourcePath);
   function recursive(node, callback){
@@ -41,7 +41,7 @@ module.exports.pitch = function(remainRequest){
     output : {
       makeMap({ path, ext }){
         return ext === "template"
-          ? `require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor'), path ], extend( {
+          ? `require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor.js'), path ], extend( {
             hash : hash
           }, query ), true )})`
           : (isStyle( ext )
@@ -51,7 +51,7 @@ module.exports.pitch = function(remainRequest){
     },
     template : {
       makeMap({path}){
-        return `require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor'), path ], {
+        return `require(${genRequest.call( this, [ pathLib.resolve(filepath, './template-extractor.js'), path ], {
           hash : hash
         }, true )})`;
       }
@@ -64,7 +64,7 @@ module.exports.pitch = function(remainRequest){
     controller : {
       makeMap({path}){
         if( mode === "config" ){
-          return `handlers.push(require(${genRequest.call( this, [ pathLib.resolve(filepath, './ctrl-template-extractor'), path ], query, true )}).default)`
+          return `handlers.push(require(${genRequest.call( this, [ pathLib.resolve(filepath, './ctrl-template-extractor.js'), path ], query, true )}).default)`
         } else {
           return `handlers.push(require(${genRequest.call( this, [ path ], null, false )}).default)`
         }

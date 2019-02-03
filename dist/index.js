@@ -661,18 +661,16 @@ module.exports.server = function(app, name, config){
         let { ext } = loadConfig;
         log.info( `_loadfile : ${url} , "file is loaded"` );
         res.setHeader(`Content-Type`, `${dics[ ext ]};charset=UTF-8`);
-        psfile(pathLib.join(workpath,url)).read().then( d => {
+        return psfile(pathLib.join(workpath,url)).read().then( d => {
           res.write(d);
           res.end();
-        }).catch( e => {
-          log.error(`cannot get file : ${pathLib.join(workpath,url)}`);
-          res.write(`throw new Error("${pathLib.join(workpath,url)} is not avaliable")`);
         });
       }).catch( e => {
         log.error( e.message );
-        log.error( e.stack );
+        e.stack ? log.error( e.stack ) : null
         log.error(`pack : while packing file : '${pathLib.join(workpath,url)}'`);
-        res.write(`throw new Error("${pathLib.join(workpath,url)} is not avaliable")`);
+        res.write(`throw new Error("\"${pathLib.join(workpath,url)}\" is not avaliable")`);
+        res.end();
       })
     } else {
       log.minor(`prepare : "${url}" -- is not a smartangular file, neglected`)

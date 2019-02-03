@@ -667,6 +667,7 @@ module.exports.server = function(app, name, config){
           res.write(`throw new Error("${pathLib.join(workpath,url)} is not avaliable")`);
         });
       }).catch( e => {
+        log.error( e )
         log.error( e.message );
         log.error( e.stack );
         log.error(`pack : while packing file : '${pathLib.join(workpath,url)}'`);

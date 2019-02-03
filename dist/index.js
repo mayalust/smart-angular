@@ -133,7 +133,7 @@ function runWebpack(webpackConfig, url){
         res("compiled");
       } else {
         log.error(err.message);
-        rej(err.message);
+        rej( err );
       }
     });
   });
@@ -143,7 +143,9 @@ function toSecond( milisec ){
 }
 function createError(d){
   return new Promise( (res, rej) => {
-    rej(d);
+    rej({
+      message : d
+    });
   })
 }
 function createSuccess(d){
@@ -667,7 +669,6 @@ module.exports.server = function(app, name, config){
           res.write(`throw new Error("${pathLib.join(workpath,url)} is not avaliable")`);
         });
       }).catch( e => {
-        log.error( e )
         log.error( e.message );
         log.error( e.stack );
         log.error(`pack : while packing file : '${pathLib.join(workpath,url)}'`);

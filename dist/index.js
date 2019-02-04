@@ -77,7 +77,7 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
         test : /\.(png|jpe?g|gif|svg)(\?.*)?$/,
         use : "url-loader"
       }]
-    },
+    }/**,
      optimization: {
       splitChunks: {
         chunks: 'async',
@@ -100,7 +100,7 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
           }
         }
       }
-    }
+    }**/
   };
 function keys( obj ){
   let arr = [];

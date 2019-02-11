@@ -54,8 +54,8 @@ module.exports = function(source){
               });
               fd.read().then( source => {
                 let config = selectBlock( source, "config" ),
-                  deps = config.deps
-                    ? config.deps
+                  deps = config.attributes.deps
+                    ? config.attributes.deps
                       .split(",").map( splitData )
                       .filter( ({path}) => {
                         return allDeps.indexOf( path ) == -1

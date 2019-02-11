@@ -448,6 +448,7 @@ function pack(){
 explainers.add("template", null);
 module.exports = pack;
 module.exports.init = init;
+//module.exports.init.make = init.make;
 module.exports.server = function(app, name, config){
   config = extend({}, defaultConfig, config);
   let uid = random(16),

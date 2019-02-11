@@ -9,7 +9,8 @@ const render = function( handlers, inConfig ){
       if( typeof url === "undefined"){
         return "./";
       }
-      let match = /^(.*\/ps-(\w+)\/build\/)/.exec(url)
+      //let match = /^(.*\/ps-(\w+)\/build\/)/.exec(url);
+      let match = /^(.*\/build\/)/.exec(url)
       return match ? match[1] : "./";
     }
     handlers.forEach( setup => {

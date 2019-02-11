@@ -3,6 +3,7 @@ const pstree = require("ps-file"),
   workpath = process.cwd(),
   filepath = getFilePath(__filename),
   pathLib = require("path");
+module.exports
 module.exports = function( name ) {
   let ins = pstree(pathLib.resolve(workpath)),
     files = {
@@ -97,10 +98,10 @@ module.exports = function( name ) {
       }
     });
     var deps = [
-      "./build/${name}.template.config",
-      "./build/${name}.controller.config",
-      "./build/${name}.service.js",
-      "./build/${name}.style.css"
+      "./build/template.config",
+      "./build/controller.config",
+      "./build/service.js",
+      "./build/style.css"
     ], time = new Date();
     require(["angular","angular-ui-router"], function(angular){
       var module = angular.module("app", ["ui.router"]);

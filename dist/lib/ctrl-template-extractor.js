@@ -52,20 +52,25 @@ module.exports = function(source){
               let fd = nodes.find( ({ basename, ext }) => {
                 return camelhill( basename ) === item.name && ext === item.type;
               });
-              fd.read().then( source => {
-                let config = selectBlock( source, "config" ),
-                  deps = config.attributes.deps
-                    ? config.attributes.deps
-                      .split(",").map( splitData )
-                      .filter( ({path}) => {
-                        return allDeps.indexOf( path ) == -1
-                          ? allDeps.push( path ) : false;
-                      })
-                    : [];
-
-                [].push.apply( queue, deps );
+              if(typeof fd === "undefined"){
+                console.error(`${item.type} is not found`);
                 load( queue );
-              })
+              } else {
+                fd.read().then( source => {
+                  let config = selectBlock( source, "config" ),
+                    deps = config.attributes.deps
+                      ? config.attributes.deps
+                        .split(",").map( splitData )
+                        .filter( ({path}) => {
+                          return allDeps.indexOf( path ) == -1
+                            ? allDeps.push( path ) : false;
+                        })
+                      : [];
+
+                  [].push.apply( queue, deps );
+                  load( queue );
+                })
+              }
             } else {
               res( allDeps );
             }

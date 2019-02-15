@@ -1,6 +1,6 @@
 {
   "name": "smart-angular",
-  "version": "1.5.74",
+  "version": "1.5.75",
   "description": "proudsmart smart-angular",
   "main": "./dist/index.js",
   "repository": {
@@ -34,7 +34,7 @@
     "mini-css-extract-plugin": "^0.5.0",
     "node-sass": "^4.11.0",
     "proudsmart-log": "^1.0.14",
-    "ps-angular-loader": "^1.0.58",
+    "ps-angular-loader": "^1.0.59",
     "ps-file": "^1.0.30",
     "ps-filetree": "^1.0.13",
     "ps-ultility": "^1.0.59",

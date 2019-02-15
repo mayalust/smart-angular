@@ -40,7 +40,8 @@ const render = function( handlers, inConfig ){
                 directive: $compileProvider.directive,
                 filter: $filterProvider.register,
                 factory: $provide.factory,
-                service: $provide.service
+                service: $provide.service,
+                _invokeQueue : angularModule._invokeQueue
               }
             });
           }
@@ -57,7 +58,7 @@ const render = function( handlers, inConfig ){
               template : template,
               controller : ctrlname,
               resolve : {
-                loader : ["$q", function(q){
+                loader : ["$q", "$registerService", function(q, registerService){
                   let defer =  q.defer(), time = new Date();
                   if( !loaderpath ) {
                     defer.resolve("success");
@@ -72,7 +73,7 @@ const render = function( handlers, inConfig ){
                     console.log( endTime.toFixed(2) + "s is spent on importing new controllers and dependencies.")
                     setTemplate( template );
                     for(var i in args){
-                      args[i]($compileProvider);
+                      args[i]( registerService );
                     }
                     defer.resolve("success");
                   });

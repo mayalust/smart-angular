@@ -36,12 +36,27 @@ const render = function( handlers, inConfig ){
                 getRouters() {
                   return window.__smartAngular__["routers"];
                 },
-                controller: $controllerProvider.register,
-                directive: $compileProvider.directive,
-                filter: $filterProvider.register,
-                factory: $provide.factory,
-                service: $provide.service,
-                _invokeQueue : angularModule._invokeQueue
+                controller(){
+                  $controllerProvider.register.apply($controllerProvider,arguments);
+                  this._invokeQueue.push(["$controllerProvider", "controller", [arguments[0]]]);
+                },
+                directive(){
+                  $compileProvider.directive.apply($compileProvider,arguments)
+                  this._invokeQueue.push(["$compileProvider", "directive", [arguments[0]]]);
+                },
+                filter(){
+                  $filterProvider.register.apply($filterProvider,arguments);
+                  this._invokeQueue.push(["$filterProvider", "filter", [arguments[0]]]);
+                },
+                factory(){
+                  $provide.factory.apply($provide,arguments);
+                  this._invokeQueue.push(["$provide", "factory", [arguments[0]]]);
+                },
+                service(){
+                  $provide.service.apply($provide,arguments);
+                  this._invokeQueue.push(["$provide", "service", [arguments[0]]]);
+                },
+                _invokeQueue : [].slice.call(angularModule._invokeQueue)
               }
             });
           }
@@ -69,7 +84,7 @@ const render = function( handlers, inConfig ){
                     let args = [].slice.call(arguments),
                       endTime = ( new Date() - time ) / 1000,
                       first = args.shift(),
-                      { template } = first($controllerProvider);
+                      { template } = first( registerService );
                     console.log( endTime.toFixed(2) + "s is spent on importing new controllers and dependencies.")
                     setTemplate( template );
                     for(var i in args){

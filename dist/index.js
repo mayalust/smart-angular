@@ -451,7 +451,7 @@ function getAttrs( obj, attrs ){
     if( typeof obj[item] === "object" ){
       obj = obj[item];
     } else {
-      return obj;
+      return obj[item];
     }
   }
 }

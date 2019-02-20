@@ -445,6 +445,16 @@ function pack(){
     }
   });
 }
+function getAttrs( obj, attrs ){
+  let attrsArr = attrs.split("/"), item;
+  while( item = attrsArr.shift() ){
+    if( typeof obj[item] === "object" ){
+      obj = obj[item];
+    } else {
+      return obj;
+    }
+  }
+}
 explainers.add("template", null);
 module.exports = pack;
 module.exports.init = init;
@@ -486,9 +496,9 @@ module.exports.server = function(app, name, config){
             type : "output",
             output : pathLib.resolve(workpath, `${m[1]}/build`),
             ext : "js",
-            needMap : handlers['output']['separate']['needMap'],
-            config : handlers['output']['separate']['data'],
-            before : handlers['output']['separate']['before'],
+            needMap : getAttrs( handlers, 'output/separate/needMap' ),
+            config : getAttrs( handlers, 'output/separate/data' ),
+            before : getAttrs( handlers, 'output/separate/before' ),
             after : checkModified
           }
         }
@@ -501,8 +511,8 @@ module.exports.server = function(app, name, config){
             type : type,
             entry : type,
             ext : ext,
-            needMap : handlers[type]['config']['needMap'],
-            config : handlers[type]["config"]['data'],
+            needMap : getAttrs( handlers[type], 'config/needMap' ),
+            config : getAttrs( handlers[type], 'config/data' ),
             mode : mode,
             after : checkModified
           }
@@ -516,9 +526,9 @@ module.exports.server = function(app, name, config){
             type : type,
             entry : type,
             ext : ext,
-            needMap : handlers[type]['combined']['needMap'],
-            config : handlers[type]["combined"]['data'],
-            before : handlers[type]['combined']['before'],
+            needMap : getAttrs( handlers[type], 'combined/needMap' ),
+            config : getAttrs( handlers[type], 'combined/data' ),
+            before : getAttrs( handlers[type], 'combined/before' ),
             after : checkModified
           }
         }
@@ -532,9 +542,9 @@ module.exports.server = function(app, name, config){
             entry : entry,
             separate : entry,
             ext : ext,
-            needMap : handlers[type]['separate']['needMap'],
-            config : handlers[type]["separate"]['data'],
-            before : handlers[type]['separate']['before']({
+            needMap : getAttrs( handlers[type], 'separate/needMap' ),
+            config : getAttrs( handlers[type], 'separate/data' ),
+            before : getAttrs( handlers[type], 'separate/before' )({
               basename : entry
             }),
             after : checkModified,

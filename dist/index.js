@@ -42,7 +42,8 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
     controller : createCached(),
     directive : createCached(),
     service : createCached(),
-    style : createCached()
+    style : createCached(),
+    output : createCached()
   }, { explainers, angularLoaderPlugin, template } = require("ps-angular-loader"),
   __webpackConfig = {
     watch : false,
@@ -454,6 +455,7 @@ function getAttrs( obj, attrs ){
       return obj[item];
     }
   }
+  return obj;
 }
 explainers.add("template", null);
 module.exports = pack;
@@ -496,9 +498,9 @@ module.exports.server = function(app, name, config){
             type : "output",
             output : pathLib.resolve(workpath, `${m[1]}/build`),
             ext : "js",
-            needMap : getAttrs( handlers, 'output/separate/needMap' ),
-            config : getAttrs( handlers, 'output/separate/data' ),
-            before : getAttrs( handlers, 'output/separate/before' ),
+            needMap : getAttrs( handlers, 'output/combined/needMap' ),
+            config : getAttrs( handlers, 'output/combined/data' ),
+            before : getAttrs( handlers, 'output/combined/before' ),
             after : checkModified
           }
         }

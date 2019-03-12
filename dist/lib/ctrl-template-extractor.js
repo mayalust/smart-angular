@@ -1,4 +1,5 @@
 const { getFilePath,  getFileName, camelhill, unCamelhill } = require("ps-ultility"),
+  log = require('proudsmart-log')( true ),
   workpath = process.cwd(),
   filepath = getFilePath(__filename),
   pathLib = require("path"),
@@ -45,37 +46,43 @@ module.exports = function(source){
         .children( node => {
           return node.ext === "directive" || node.ext === "service"
         })
-        .then( nodes => {
-          function load(queue){
+        .then( ( nodes ) => {
+          function load(queue, loaded ){
             let item = queue.shift();
             if( item ){
               let fd = nodes.find( ({ basename, ext }) => {
                 return camelhill( basename ) === item.name && ext === item.type;
               });
               if(typeof fd === "undefined"){
-                console.error(`${item.type} is not found`);
-                load( queue );
+                log.error(`[ ${item.type} : ${ basename } ] is not found, will be negelect.`);
+                load( queue, loaded );
               } else {
-                fd.read().then( source => {
-                  let config = selectBlock( source, "config" ),
-                    deps = config.attributes.deps
-                      ? config.attributes.deps
-                        .split(",").map( splitData )
-                        .filter( ({path}) => {
-                          return allDeps.indexOf( path ) == -1
-                            ? allDeps.push( path ) : false;
-                        })
-                      : [];
+                if( loaded[ item.name ] ){
+                  log.error(`[ ${item.type} : ${ item.type } ] is Circular invoked.`);
+                  load( queue, loaded );
+                } else {
+                  loaded[ item.name ] = item.type;
+                  fd.read().then( source => {
+                    let config = selectBlock( source, "config" ),
+                      deps = config.attributes.deps
+                        ? config.attributes.deps
+                          .split(",").map( splitData )
+                          .filter( ({path}) => {
+                            return allDeps.indexOf( path ) == -1
+                              ? allDeps.push( path ) : false;
+                          })
+                        : [];
 
-                  [].push.apply( queue, deps );
-                  load( queue );
-                })
+                    [].push.apply( queue, deps );
+                    load( queue, loaded );
+                  })
+                }
               }
             } else {
               res( allDeps );
             }
           }
-          load( queue );
+          load( queue, {} );
         })
     })
 

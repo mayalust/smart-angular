@@ -54,7 +54,7 @@ module.exports = function(source){
                 return camelhill( basename ) === item.name && ext === item.type;
               });
               if(typeof fd === "undefined"){
-                log.error(`[ ${item.type} : ${ basename } ] is not found, will be negelect.`);
+                log.error(`[ ${item.type} : ${ item.name } ] is not found, will be negelect.`);
                 load( queue, loaded );
               } else {
                 if( loaded[ item.name ] ){
@@ -104,5 +104,7 @@ module.exports = function(source){
       ctrlname : "${ name }"
     }
   }`)
+  }).catch( e => {
+    log.error(`${ e }`);
   });
 };

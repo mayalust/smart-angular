@@ -21,7 +21,11 @@ module.exports = function(source){
     extsDics = {
       directive : "js|css",
       service : "js"
-    };
+    },
+    name = getFileName( this.resourcePath ),
+    configBlock = selectBlock( source, "config" ),
+    config = configBlock.attributes,
+    param = makeParam( config.params || config.param || "" );
   function makeDeps(){
     return new Promise(( res, rej) => {
       let allDeps = [`controller/${name}.js|css`],
@@ -54,11 +58,11 @@ module.exports = function(source){
                 return camelhill( basename ) === item.name && ext === item.type;
               });
               if(typeof fd === "undefined"){
-                log.error(`[ ${item.type} : ${ item.name } ] is not found, will be negelect.`);
+                log.error(`[ ${name} ] ask for dep [ ${item.type} : ${ item.name } ] is not found, will be negelect.`);
                 load( queue, loaded );
               } else {
                 if( loaded[ item.name ] ){
-                  log.error(`[ ${item.type} : ${ item.type } ] is Circular invoked.`);
+                  log.error(`[ ${name} ] ask for dep [ ${item.type} : ${ item.type } ] is Circular invoked.`);
                   load( queue, loaded );
                 } else {
                   loaded[ item.name ] = item.type;
@@ -91,10 +95,6 @@ module.exports = function(source){
     let arr = str.split("/").filter( d => d);
     return arr.length > 0 ? `/${ arr.join("/") }` : "";
   }
-  let name = getFileName( this.resourcePath ),
-    configBlock = selectBlock( source, "config" ),
-    config = configBlock.attributes,
-    param = makeParam( config.params || config.param || "" );
   makeDeps( config ).then( d => {
     callback(null, `export default function(){
     return {

@@ -3,7 +3,8 @@ MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   jsonloader = require("./lib/json-loader.js"),
   { extend, getFilePath, isArray, isFunction, tree, random, eachProp, dateparser } = require("ps-ultility"),
   fs = require("fs"),
-  init = require("./lib/init.js"),
+  initHandler = require("./lib/init.js"),
+  { init, controller, directive, service } = initHandler,
   { parse } = require("querystring"),
   webpack = require("webpack"),
   pathLib = require("path"),
@@ -460,7 +461,9 @@ function getAttrs( obj, attrs ){
 explainers.add("template", null);
 module.exports = pack;
 module.exports.init = init;
-//module.exports.init.make = init.make;
+module.exports.controller = controller;
+module.exports.directive = directive;
+module.exports.service = service;
 module.exports.server = function(app, name, config){
   config = extend({}, defaultConfig, config);
   let uid = random(16),

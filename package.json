@@ -1,6 +1,6 @@
 {
   "name": "smart-angular",
-  "version": "1.5.88",
+  "version": "1.5.89",
   "description": "proudsmart smart-angular",
   "main": "./dist/index.js",
   "repository": {
@@ -16,6 +16,9 @@
     "init": "./dist/run.js init",
     "pack": "./dist/run.js pack",
     "dev": "./dist/run.js dev",
+    "controller": "./dist/run.js controller",
+    "directive": "./dist/run.js directive",
+    "service": "./dist/run.js service",
     "debug": "node-inspector -p 8000"
   },
   "bin": {
@@ -34,7 +37,7 @@
     "mini-css-extract-plugin": "^0.5.0",
     "node-sass": "^4.11.0",
     "proudsmart-log": "^1.0.14",
-    "ps-angular-loader": "^1.0.65",
+    "ps-angular-loader": "^1.0.66",
     "ps-file": "^1.0.30",
     "ps-filetree": "^1.0.13",
     "ps-ultility": "^1.0.59",

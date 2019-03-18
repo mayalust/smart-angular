@@ -2,11 +2,8 @@ const pstree = require("ps-file"),
   log = require("proudsmart-log")(),
   workpath = process.cwd(),
   filepath = getFilePath(__filename),
-  pathLib = require("path");
-module.exports
-module.exports = function( name ) {
-  let ins = pstree(pathLib.resolve(workpath)),
-    files = {
+  pathLib = require("path"),
+  files = {
     controller: {
       title: `test`,
       content: `<config injector="$scope"></config>
@@ -64,10 +61,16 @@ module.exports = function( name ) {
     }
   }  
 </script>`
+    },
+    style : {
+      title: `test`,
+      content : `body{}`,
+      ext : "less"
     }
-  };
-  function conIndexHtml( name ){
-    return `<!-- demo html for project "ps-${name}" -->
+  },
+  ins = pstree(pathLib.resolve(workpath));
+function conIndexHtml( name ){
+  return `<!-- demo html for project "ps-${name}" -->
 <!DOCTYPE html>
 <html
     lang="en">
@@ -82,6 +85,15 @@ module.exports = function( name ) {
 <body>
   <div ui-view></div>
   <script>
+  
+    /************************** smart-angular v1.5.85 ************************************/
+    /************************************* important ************************************/
+
+    /** please run [ npm i angular,requirejs,ps-require,angular-ui-router ] before run **/
+    
+    /************************************* important ************************************/
+    /************************** smart-angular v1.5.85 ************************************/
+  
     require.config({
       waitSeconds: 0,
       paths: {
@@ -117,32 +129,72 @@ module.exports = function( name ) {
   </script>
 </body>
 </html>`;
+};
+function createFn( projectname, name, type ){
+  if( typeof name !== "string") {
+    log.error("please input a proper file name, use command as [ smart-angular controller projectname filename ]");
   }
-  function eachprop( obj, callback ){
-    for(let i in obj){
-      callback( i, obj[i] );
-    }
-  }
-  function propMap( obj, callback ){
-    let rs = [];
-    eachprop( obj, ( attr, elem ) => {
-      rs.push( callback( attr, elem));
+  if( ins.exist(`ps-${projectname}/${type}s`) ){
+    ins.stat(`ps-${projectname}/${type}s`).then( d => {
+      let inx = 0, item = name;
+      while( d.exist(`./${item}.${type}`) ){
+        log.info(`"./${item}.${type}" is already exist renamed with "${name}_copy${inx}"`);
+        item = name + "_copy" + ( inx ? inx : "" );
+        inx++;
+      }
+      let content = files[type].content;
+      return d.write(`${item}.${type}`, content).then( d => {
+        log.success(`"${item}.${type}" is successfully created!`);
+      });
     })
-    return rs;
-  }
-  if( !ins.exist(`ps-${name}`) ){
-    ins.mkdir(`ps-${name}`).then( d => {
-      let promises = [ d.write(`index.html`, conIndexHtml( name )) ]
-        .concat(propMap(files, ( attr, { title, content } ) => {
-        return d.mkdir(`${attr}s`).then( n => {
-          return n.write( `${title}.${attr}`, content );
-        });
-      }));
-      return Promise.all(promises);
-    }).then( d => {
-      console.log("success");
-    })
-  } else {
-    log.error("module is already exist.")
+  } else{
+    log.error(`project "${name}" is not exist.`);
   }
 }
+class initHandler {
+  constructor(){}
+  init( name ){
+    if( typeof name !== "string" ){
+      log.error("please input a name for the new create project, use command as [ smart-angular init project name ]");
+      return;
+    }
+    function eachprop( obj, callback ){
+      for(let i in obj){
+        callback( i, obj[i] );
+      }
+    }
+    function propMap( obj, callback ){
+      let rs = [];
+      eachprop( obj, ( attr, elem ) => {
+        rs.push( callback( attr, elem));
+      })
+      return rs;
+    }
+    if( !ins.exist(`ps-${name}`) ){
+      ins.mkdir(`ps-${name}`).then( d => {
+        let promises = [ d.write(`index.html`, conIndexHtml( name )) ]
+          .concat(propMap(files, ( attr, { title, content, ext } ) => {
+            return d.mkdir(`${attr}s`).then( n => {
+              return n.write( `${title}.${ ext || attr }`, content );
+            });
+          }));
+        return Promise.all(promises)
+          .then( n => {
+            log.success(`project "${name}" is already created at '${d.path}'`);
+          });
+      })
+    } else {
+      log.error(`project "${name}" is already exist.`)
+    }
+  }
+  controller( projectname, name ){
+    createFn( projectname, name, "controller");
+  }
+  directive( projectname, name ){
+    createFn( projectname, name, "directive");
+  }
+  service( projectname, name ){
+    createFn( projectname, name, "service");
+  }
+}
+module.exports = new initHandler;

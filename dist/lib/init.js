@@ -89,7 +89,7 @@ function conIndexHtml( name ){
     /************************** smart-angular v1.5.85 ************************************/
     /************************************* important ************************************/
 
-    /** please run [ npm i angular,requirejs,ps-require,angular-ui-router ] before run **/
+    /** please install package [ npm i angular requirejs ps-require angular-ui-router ] before run **/
     
     /************************************* important ************************************/
     /************************** smart-angular v1.5.85 ************************************/
@@ -97,8 +97,8 @@ function conIndexHtml( name ){
     require.config({
       waitSeconds: 0,
       paths: {
-        'angular': './node_modules/angular/angular',
-        'angular-ui-router' : "./node_modules/angular-ui-router/release/angular-ui-router",
+        'angular': '../node_modules/angular/angular',
+        'angular-ui-router' : "../node_modules/angular-ui-router/release/angular-ui-router",
       },
       shim: {
         'angular': {

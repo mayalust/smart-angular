@@ -494,7 +494,7 @@ module.exports.server = function(app, name, config){
       return;
     }
     log.minor( `start : ${url}`);
-    filesLib.readFiles( pack );
+    filesLib.readFiles( name );
     function makeloadconfig(url){
       let dics = [{
         test : new RegExp(`(ps-${name})\\\/build\\\/output\\.js`),

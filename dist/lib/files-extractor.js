@@ -1,5 +1,5 @@
 const { ultils } = require("ps-angular-loader"),
-  { isArray, isFunction, getFilePath, random } = require("ps-ultility"),
+  { isArray, isFunction, getFilePath, random, extend } = require("ps-ultility"),
   log = require('proudsmart-log')( true ),
   psfile = require("ps-file"),
   workpath = process.cwd(),

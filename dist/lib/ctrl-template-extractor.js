@@ -1,6 +1,7 @@
 const { getFilePath,  getFileName, camelhill, unCamelhill } = require("ps-ultility"),
   log = require('proudsmart-log')( true ),
   workpath = process.cwd(),
+  filesLib = require("./files.js"),
   filepath = getFilePath(__filename),
   pathLib = require("path"),
   psfile = require("ps-file"),
@@ -46,50 +47,45 @@ module.exports = function(source){
           path : `${type}/${unCamelhill( name )}.${ext}`
         }
       }
-      psfile(pathLib.resolve(basepath))
-        .children( node => {
-          return node.ext === "directive" || node.ext === "service"
-        })
-        .then( ( nodes ) => {
-          function load(queue, loaded ){
-            let item = queue.shift();
-            if( item ){
-              let fd = nodes.find( ({ basename, ext }) => {
-                return camelhill( basename ) === item.name && ext === item.type;
-              });
-              if(typeof fd === "undefined"){
-                log.error(`[ ${name} ] ask for dep [ ${item.type} : ${ item.name } ] is not found, will be negelect.`);
+      filesLib.getFiles().then( ( nodes ) => {
+        function load(queue, loaded ){
+          let item = queue.shift();
+          if( item ){
+            let fd = nodes.find( ({ basename, ext }) => {
+              return camelhill( basename ) === item.name && ext === item.type;
+            });
+            if(typeof fd === "undefined"){
+              log.error(`[ ${name} ] ask for dep [ ${item.type} : ${ item.name } ] is not found, will be negelect.`);
+              load( queue, loaded );
+            } else {
+              if( loaded[ item.name ] ){
+                log.error(`[ ${name} ] ask for dep [ ${item.type} : ${ item.type } ] is Circular invoked.`);
                 load( queue, loaded );
               } else {
-                if( loaded[ item.name ] ){
-                  log.error(`[ ${name} ] ask for dep [ ${item.type} : ${ item.type } ] is Circular invoked.`);
+                loaded[ item.name ] = item.type;
+                fd.read().then( source => {
+                  let config = selectBlock( source, "config" ),
+                    deps = config.attributes.deps
+                      ? config.attributes.deps
+                        .split(",").map( splitData )
+                        .filter( ({path}) => {
+                          return allDeps.indexOf( path ) == -1
+                            ? allDeps.push( path ) : false;
+                        })
+                      : [];
+
+                  [].push.apply( queue, deps );
                   load( queue, loaded );
-                } else {
-                  loaded[ item.name ] = item.type;
-                  fd.read().then( source => {
-                    let config = selectBlock( source, "config" ),
-                      deps = config.attributes.deps
-                        ? config.attributes.deps
-                          .split(",").map( splitData )
-                          .filter( ({path}) => {
-                            return allDeps.indexOf( path ) == -1
-                              ? allDeps.push( path ) : false;
-                          })
-                        : [];
-
-                    [].push.apply( queue, deps );
-                    load( queue, loaded );
-                  })
-                }
+                })
               }
-            } else {
-              res( allDeps );
             }
+          } else {
+            res( allDeps );
           }
-          load( queue, {} );
-        })
+        }
+        load( queue, {} );
+      })
     })
-
   }
   function makeParam( str ){
     let arr = str.split("/").filter( d => d);

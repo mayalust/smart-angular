@@ -1,5 +1,6 @@
-const log = require('proudsmart-log')( true );
-MiniCssExtractPlugin = require("mini-css-extract-plugin"),
+const log = require('proudsmart-log')( true ),
+  filesLib = require("./lib/files.js"),
+  MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   jsonloader = require("./lib/json-loader.js"),
   { extend, getFilePath, isArray, isFunction, tree, random, eachProp, dateparser } = require("ps-ultility"),
   fs = require("fs"),
@@ -370,6 +371,7 @@ function pack(){
     config = extend({}, defaultConfig, ex),
     handlers = makeHandlers( name , makeQuery(querystrArr)),
     webpackConfig = makeWebpackConfig(name, config, extend({}, __webpackConfig));
+  filesLib.readFiles( name );
   function makeQuery( arr ){
     return arr.length ? arr.map( d => {
       return d.replace(new RegExp("\\*", "g"), "[^\\\/.]+").replace(".", "\\.");
@@ -492,7 +494,7 @@ module.exports.server = function(app, name, config){
       return;
     }
     log.minor( `start : ${url}`);
-
+    filesLib.readFiles( pack );
     function makeloadconfig(url){
       let dics = [{
         test : new RegExp(`(ps-${name})\\\/build\\\/output\\.js`),

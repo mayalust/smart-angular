@@ -1,7 +1,6 @@
 const pstree = require("ps-file"),
   log = require("proudsmart-log")(),
   workpath = process.cwd(),
-  filepath = getFilePath(__filename),
   pathLib = require("path"),
   files = {
     controller: {

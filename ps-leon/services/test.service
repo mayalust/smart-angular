@@ -1,0 +1,8 @@
+<config injector="$rootScope"></config>
+<script>
+  export default function( rootScope ){
+    return {
+      a : 10
+    }
+  }  
+</script>

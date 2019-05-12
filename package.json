@@ -19,7 +19,8 @@
     "controller": "./dist/run.js controller",
     "directive": "./dist/run.js directive",
     "service": "./dist/run.js service",
-    "debug": "node-inspector -p 8000"
+    "debug": "node-inspector -p 8000",
+    "mocha": "mocha --recursive"
   },
   "bin": {
     "smart-angular": "./dist/run.js"
@@ -49,6 +50,8 @@
   "devDependencies": {
     "angular": "^1.7.5",
     "angular-ui-router": "^1.0.20",
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4",
     "ps-require": "^1.0.14",
     "requirejs": "^2.3.6",
     "webpack-dev-server": "^3.1.14"

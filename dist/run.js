@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const smartAngular = require(`./index`),
-  initHandler = require(`./index`),
+const smartAngular = require(`./lib/old/index`),
+  initHandler = require(`./lib/old/index`),
   { init, controller, directive, service } = initHandler;
 let arguments = process.argv.slice(2),
   command = arguments.shift(),

@@ -1,0 +1,22 @@
+<config injector="$rootScope,test"></config>
+<template>
+  <div class="wrap">
+    <span>{{n}}</span>
+  </div>
+</template>
+<script>
+  export default function( rootScope, test ){
+    return {
+      link( scope, elem, attr) {
+        scope.n = "sample directive" + test.a;
+      }
+    }
+  }  
+</script>
+<style lang="scss" scoped>
+  .wrap {
+    span {
+      color : blue
+    }
+  }
+</style>

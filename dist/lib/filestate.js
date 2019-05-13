@@ -1,33 +1,52 @@
-let psfile = require("ps-file");
+const psfile = require("ps-file");
 const workpath = process.cwd();
 const pathLib = require("path");
+const { isArray } = require("ps-ultility");
 class FileStates {
-  constructor( config ){
-    for( let i in config ){
-      this[i] = config[i];
-    };
+  constructor(){
     this.filesMap = new Map;
   }
-  load( factory, arr ){
-    function loadFile( dir ){
-      return psfile(pathLib.resolve(workpath,`./${ factory }` ,`./${dir}`))
-        .children();
+  set( id, file ){
+    let st = this.filesMap.get( id );
+    if( st == null ){
+      this.filesMap.set( id, new State( id, file ));
+    } else {
+      st.setFile(file);
     }
-    return Promise.all(arr.map(loadFile)).then( files => {
-      return Promise.resolve( files.reduce((a,b)=> {
-        return a.concat(b);
-      }, []));
+  }
+  get( id ){
+    return this.filesMap.get( id );
+  }
+  isModified( ids ){
+    ids = isArray(ids ) ? ids : [ ids ];
+    return id.some(id => {
+      let st = this.get( id );
+      return st.isModified;
     });
   }
 }
-function getfileStateInstance( config ){
+class State{
+  constructor( id, file ){
+    this.id = id;
+    this.file = file;
+  }
+  setFile( file ){
+    this.oldfile = this.file;
+    this.file = file;
+  }
+}
+Object.defineProperty(State.prototype, "isModified", {
+  get(){
+    return this.oldfile.modifytime != this.file.modifytime;
+  }
+})
+function getfileStateInstance(){
   let instance;
   return function(){
     if( instance == null) {
-      instance = new FileStates( config )
+      instance = new FileStates();
     }
     return instance;
   }
-
 }
 module.exports = getfileStateInstance;

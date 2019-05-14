@@ -1,18 +1,25 @@
-let Module = require("./module");
+let Module = require("./module"),
+  webpack = require("webpack");
 class Packer {
   constructor(){}
-  pack( str ){
-    if( typeof str !== "string" ){
-      throw new Error("invalid input!!");
+  pack( modulelist, callback ){
+    let gen = runWebpackList(modulelist.filter( module => module.isModified()));
+    function* runWebpackList( list ){
+      let item = list.shift();
+      while(item = list.shift()){
+        yield runWebpack( item )
+      }
+      callback();
     }
-    let arr = str.split("/"),
-      factory = arr[0],
-      path = arr[1],
-      file = arr[2],
-      module = new Module(factory, path, file);
-    module.then(()=>{
-      console.log("module loaded!!");
-    })  
+    function runWebpack({entry, output}){
+      let webpackConfig = {
+        entry : entry,
+        output : output
+      }
+      webpack(webpackConfig).then( d => {
+        gen.next();
+      })
+    }
   }
 }
 module.exports = Packer

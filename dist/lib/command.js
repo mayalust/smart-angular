@@ -1,18 +1,26 @@
-const getDepsStateInstance = require("./filestate.js"),
-  packer = require("./packer.js"),
-  Module = require("./module.js");
+const packer = require("./packer.js"),
+  moduleList = require("./moduleList.js");
 class Command {
   constructor( config ){
-    this.filestate = new getDepsStateInstance( config )();
+    this.prefix = config.prefix;
+  }
+  getFactory( factory ){
+    let name = [ factory ];
+    if( this.prefix ){
+      name.unshift(this.prefix);
+    }
+    return name.join("-");
   }
   pack( str ) {
     if (typeof str !== "string") {
       throw new Error("invalid input!!");
     }
     let arr = str.split("/"),
-      factory = arr[0],
+      factory = getFactory( arr[0] ),
       path = arr[1],
       file = arr[2];
+      modulelist = new moduleList( factory, path, file );
+    packer.pack( modulelist );
   }
 }
 module.exports = Command

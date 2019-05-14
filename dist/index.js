@@ -6,8 +6,7 @@ const { extend, getFilePath, isArray, isFunction, tree, random, eachProp, datepa
 class smartAngular{
   constructor(){
     let config = {
-      "workpath" : workpath,
-      "filepath" : filepath
+      "prefix" : "ps"
     }
     this.server = new Server( config );
     this.command = new Command( config );

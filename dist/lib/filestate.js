@@ -14,6 +14,11 @@ class FileStates {
       st.setFile(file);
     }
   }
+  setGroup( files ){
+    files.forEach( file => {
+      this.set( file.path, file );
+    })
+  }
   get( id ){
     return this.filesMap.get( id );
   }

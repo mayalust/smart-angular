@@ -19,8 +19,8 @@ class Command {
       factory = getFactory(arr[0]),
       path = arr[1],
       file = arr[2];
-    modulelist = new moduleList(factory, path, file);
-    packer.pack(modulelist);
+    moduleList = new moduleList(factory, path, file);
+    packer.pack(moduleList);
   }
 }
 module.exports = Command;

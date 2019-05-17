@@ -1,22 +1,28 @@
-let Module = require("./module"),
+const Module = require("./module"),
   webpack = require("webpack");
 class Packer {
-  constructor(){}
-  pack( modulelist, callback ){
-    let gen = runWebpackList(modulelist.filter( module => module.isModified()));
-    function* runWebpackList( list ){
+  constructor() {}
+  pack(moduleList, callback) {
+    let gen = runWebpackList(moduleList.filter(module => module.isModified()));
+    gen.next();
+
+    function* runWebpackList(list) {
       let item = list.shift();
-      while(item = list.shift()){
-        yield runWebpack( item )
+      while (item = list.shift()) {
+        yield runWebpack(item)
       }
       callback();
     }
-    function runWebpack({entry, output}){
+
+    function runWebpack({
+      entry,
+      output
+    }) {
       let webpackConfig = {
-        entry : entry,
-        output : output
+        entry: entry,
+        output: output
       }
-      webpack(webpackConfig).then( d => {
+      webpack(webpackConfig).then(d => {
         gen.next();
       })
     }

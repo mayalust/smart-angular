@@ -1,22 +1,25 @@
-const workpath = process.cwd();
-const pathLib = require("path");
-const psfile = require("ps-file");
-const getfileStateInstance = require("filestate");
-function loadFiles(factory, arr){
-  return new Promise((res, rej)=> {
+const workPath = process.cwd(),
+  pathLib = require("path"),
+  psFile = require("ps-file"),
+  getFileStateInstance = require("file-state");
+
+function loadFiles(factory, arr) {
+  return new Promise((res, rej) => {
     let gen;
-    function *loadFilesGen( arr ){
-      let rs = [];
-      while( arr.length > 0 ){
-        let a = yield loadf( arr );
+
+    function* loadFilesGen(arr) {
+      let rs = [],
+        item;
+      while (item = arr.shift()) {
+        let a = yield loadFn(item);
         [].push.apply(rs, a);
       }
-      res( rs );
+      res(rs);
     }
-    function loadf(arr){
-      let item = arr.shift();
-      let f = pathLib.join(workpath,`./${factory}/${item}`);
-      psfile(f).children(()=>true).then( d => {
+
+    function loadFn(item) {
+      let f = pathLib.join(workPath, `./${factory}/${item}`);
+      psFile(f).children(() => true).then(d => {
         gen.next(d);
       });
     }
@@ -24,18 +27,20 @@ function loadFiles(factory, arr){
     gen.next();
   });
 }
-function identify( id, val ){
-  return function( d ){
+
+function identify(id, val) {
+  return function (d) {
     return d[id] == val;
   }
 }
-function filterByBaseName( deps ){
-  return Promise.resolve( file == null ? deps : deps.filter(identify("basename", file)));
+
+function filterByBaseName(deps) {
+  return Promise.resolve(file == null ? deps : deps.filter(identify("basename", file)));
 }
 class Module {
-  constructor(factory, path, file){
+  constructor(factory, path, file) {
     this.factory = factory;
-    this.filestate = getfileStateInstance();
+    this.fileState = getFileStateInstance();
     this.path = path;
     this.file = file;
     this.deps = [];
@@ -46,29 +51,29 @@ class Module {
       async output() {
         return await loadFiles(factory, ["controllers", "services", "directives", "styles"]);
       },
-      "controller.config" : async () => {
+      "controller.config": async () => {
         return await loadFiles(factory, ["controllers"]);
       },
-      async controllers( file ){
+      async controllers(file) {
         return await loadFiles(factory, ["controllers"]).then(filterByBaseName);
       },
-      async services( file ){
+      async services(file) {
         return await loadFiles(factory, ["services"]).then(filterByBaseName);
       },
-      async directives( file ){
+      async directives(file) {
         return await loadFiles(factory, ["directives"]).then(filterByBaseName);
       }
     }
     let fn = explainer[path];
-    this.loaded = fn( file ).then( deps => {
+    this.loaded = fn(file).then(deps => {
       this.deps = deps;
       this.isLoaded = true;
-      filestate.setGroup(deps);
-      return Promise.resolve( deps );
+      fileState.setGroup(deps);
+      return Promise.resolve(deps);
     });
   }
-  isModified(){
-    return this.filestate.isModified(this.deps.filter( dep => dep.path));
+  isModified() {
+    return this.fileState.isModified(this.deps.filter(dep => dep.path));
   }
 }
 module.exports = Module

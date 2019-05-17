@@ -1,13 +1,13 @@
 const Module = require("./module.js");
 class ModuleList {
-  constructor( factory, path, file ){
-    if( typeof path !== "string" ){
+  constructor(factory, path, file) {
+    if (typeof path !== "string") {
       path = ["output", "controllers", "services", "directives", "styles"];
     } else {
       path = [path];
     }
-    this.modulelist = path.map( p => {
-      return new Module( factory, p, file );
+    this.moduleList = path.map(p => {
+      return new Module(factory, p, file);
     });
   }
 }

@@ -1,7 +1,7 @@
 const workPath = process.cwd(),
   pathLib = require("path"),
   psFile = require("ps-file"),
-  getFileStateInstance = require("file-state");
+  getFileStateInstance = require("./file-state.js")();
 
 function loadFiles(factory, arr) {
   return new Promise((res, rej) => {
@@ -34,9 +34,6 @@ function identify(id, val) {
   }
 }
 
-function filterByBaseName(deps) {
-  return Promise.resolve(file == null ? deps : deps.filter(identify("basename", file)));
-}
 class Module {
   constructor(factory, path, file) {
     this.factory = factory;
@@ -65,10 +62,14 @@ class Module {
       }
     }
     let fn = explainer[path];
+
+    function filterByBaseName(deps) {
+      return Promise.resolve(file == null ? deps : deps.filter(identify("basename", file)));
+    }
     this.loaded = fn(file).then(deps => {
       this.deps = deps;
       this.isLoaded = true;
-      fileState.setGroup(deps);
+      this.fileState.setGroup(deps);
       return Promise.resolve(deps);
     });
   }

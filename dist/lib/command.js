@@ -1,8 +1,8 @@
 const packer = require("./packer.js"),
   moduleList = require("./moduleList.js");
 class Command {
-  constructor(config) {
-    this.prefix = config.prefix;
+  constructor(config = {}) {
+    this.prefix = config.prefix || "ps";
   }
   getFactory(factory) {
     let name = [factory];
@@ -16,7 +16,7 @@ class Command {
       throw new Error("invalid input!!");
     }
     let arr = str.split("/"),
-      factory = getFactory(arr[0]),
+      factory = this.getFactory(arr[0]),
       path = arr[1],
       file = arr[2];
     moduleList = new moduleList(factory, path, file);

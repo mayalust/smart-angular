@@ -1,17 +1,26 @@
 const Module = require("./module"),
   webpack = require("webpack");
+
+function runItem(obj) {
+  let {
+    entry
+  } = obj;
+  obj.entry = typeof entry == "function" ? entry() : entry;
+  return obj;
+}
 class Packer {
   constructor() {}
   pack(moduleList, callback) {
     let gen = runWebpackList(moduleList.filter(module => module.isModified()));
+    let rs = [];
     gen.next();
 
     function* runWebpackList(list) {
       let item = list.shift();
       while (item = list.shift()) {
-        yield runWebpack(item)
+        yield runWebpack(runItem(item))
       }
-      callback();
+      callback(rs);
     }
 
     function runWebpack({
@@ -22,6 +31,7 @@ class Packer {
         entry: entry,
         output: output
       }
+      rs.push(webpackConfig);
       webpack(webpackConfig).then(d => {
         gen.next();
       })

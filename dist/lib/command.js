@@ -11,16 +11,27 @@ class Command {
     }
     return name.join("-");
   }
+  getFactoryQuery(str) {
+    let arr = str.split("/");
+    return {
+      factory: this.getFactory(arr[0]),
+      path: arr[1],
+      file: arr[2]
+    };
+  }
   pack(str) {
     if (typeof str !== "string") {
       throw new Error("invalid input!!");
     }
-    let arr = str.split("/"),
-      factory = this.getFactory(arr[0]),
-      path = arr[1],
-      file = arr[2];
+    let {
+      factory,
+      path,
+      file
+    } = getFactoryQuery(str);
     moduleList = new moduleList(factory, path, file);
-    packer.pack(moduleList);
+    packer.pack(moduleList, nodes => {
+      console.log(nodes);
+    });
   }
 }
 module.exports = Command;

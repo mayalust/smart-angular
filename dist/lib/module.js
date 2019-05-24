@@ -1,8 +1,17 @@
-const workPath = process.cwd(),
+const _filePath = process.cwd(),
+  workPath = getWorkPath(__filename),
   pathLib = require("path"),
   psFile = require("ps-file"),
   PathMaker = require("./path-maker.js"),
   getFileStateInstance = require("./file-state.js")();
+
+function getWorkPath(path) {
+  let match = new RegExp("(.*)(?:\\\\|\\/)[^\\\/]+$").exec(path);
+  if (match == null) {
+    throw new Error("__workPath is invalid!");
+  }
+  return match[1];
+}
 
 function loadFiles(factory, arr) {
   return new Promise((res, rej) => {
@@ -19,7 +28,7 @@ function loadFiles(factory, arr) {
     }
 
     function loadFn(item) {
-      let f = pathLib.join(workPath, `./${factory}/${item}`);
+      let f = pathLib.join(_filePath, `./${factory}/${item}`);
       psFile(f)
         .children(() => true)
         .then(d => {
@@ -47,7 +56,7 @@ function filterByBaseName(file) {
 
 function makeEntry(query) {
   return new PathMaker(
-    pathLib.resolve(workPath, `.dist/lib/loaders/angular-loader.js`),
+    pathLib.resolve(workPath, `./loaders/angular-loader.js`),
     query
   ).getPath();
 }
@@ -57,8 +66,8 @@ class Output {
       fileName = filePath;
       filePath = "./build";
     }
-    this.filePath = pathLib.resolve(workPath, filePath);
-    this.fileName = fileName;
+    this.path = pathLib.resolve(_filePath, filePath);
+    this.filename = fileName;
   }
 }
 class Module {
@@ -76,7 +85,7 @@ class Module {
         this.entry = makeEntry({
           path: "output"
         });
-        this.output = "output.js";
+        this.output = new Output("output.js");
         return await loadFiles(factory, [
           "controllers",
           "services",
@@ -84,11 +93,11 @@ class Module {
           "styles"
         ]);
       },
-      "config.controller": async () => {
+      "controller.config": async () => {
         this.entry = makeEntry({
           path: "config"
         });
-        this.output = "config.controller.js";
+        this.output = new Output("controller.config.js");
         return await loadFiles(factory, ["controllers"]);
       },
       async allControllers() {

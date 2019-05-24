@@ -5,7 +5,7 @@ function toUpper(str) {
 }
 class MakeConfig {
   constructor(factory, path, file) {
-    const Normal = ["output", "controllers", "services", "directives", "styles"],
+    const Normal = ["output", "controller.config", "controllers", "services", "directives", "styles"],
       All = ["allControllers", "allServices", "allDirectives"];
     this.factory = factory;
     if (path == null || path == "*") {

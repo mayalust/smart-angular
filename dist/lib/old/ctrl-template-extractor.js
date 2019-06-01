@@ -1,97 +1,120 @@
-const { getFilePath,  getFileName, camelhill, unCamelhill } = require("ps-ultility"),
-  log = require('proudsmart-log')( true ),
+const {
+  getFilePath,
+  getFileName,
+  camelhill,
+  unCamelhill
+} = require("ps-ultility"),
+  log = require('proudsmart-log')(true),
   workpath = process.cwd(),
   filesLib = require("./files.js"),
   filepath = getFilePath(__filename),
   pathLib = require("path"),
-  psfile = require("ps-file"),
-  { parse } = require("querystring"),
-  { ultils, template } = require("ps-angular-loader"),
-  { selectBlock } = require("ps-angular-loader/lib/select"),
-  { genRequest, mergeCode } = ultils;
-module.exports = function(source){
-  let { resourceQuery } = this,
-    callback = this.async(),
-    query = parse(resourceQuery.slice(1)),
-    { pack } = query,
+  psfile = require("ps-file"), {
+    parse
+  } = require("querystring"), {
+    ultils,
+    template
+  } = require("ps-angular-loader"), {
+    selectBlock
+  } = require("ps-angular-loader/lib/select"), {
+    genRequest,
+    mergeCode
+  } = ultils;
+module.exports = function (source) {
+  let {
+    resourceQuery
+  } = this,
+  callback = this.async(),
+    query = parse(resourceQuery.slice(1)), {
+      pack
+    } = query,
     basepath = pathLib.resolve(workpath, `./ps-${pack}/`),
     dics = {
-      dir : "directive",
-      ser : "service"
+      dir: "directive",
+      ser: "service"
     },
     extsDics = {
-      directive : "js|css",
-      service : "js"
+      directive: "js|css",
+      service: "js"
     },
-    name = getFileName( this.resourcePath ),
-    configBlock = selectBlock( source, "config" ),
+    name = getFileName(this.resourcePath),
+    configBlock = selectBlock(source, "config"),
     config = configBlock.attributes,
-    param = makeParam( config.params || config.param || "" );
-  function makeDeps(){
-    return new Promise(( res, rej) => {
+    param = makeParam(config.params || config.param || "");
+
+  function makeDeps() {
+    return new Promise((res, rej) => {
       let allDeps = [`controller/${name}.js|css`],
-        queue = config.deps ? config.deps.split(",").map( splitData ) : [];
-      [].push.apply( allDeps, queue.map( ({path})=> path) );
-      function splitData( str ){
-        if( typeof str === "undefined"){
+        queue = config.deps ? config.deps.split(",").map(splitData) : [];
+      [].push.apply(allDeps, queue.map(({
+        path
+      }) => path));
+
+      function splitData(str) {
+        if (typeof str === "undefined") {
           return;
         }
         let a = str.split("."),
           name = a[0],
           type = dics[a[1]] || a[1] || "directive",
-          ext = extsDics[ type ];
+          ext = extsDics[type];
         return {
-          name : name,
-          type : type,
-          ext : ext,
-          path : `${type}/${unCamelhill( name )}.${ext}`
+          name: name,
+          type: type,
+          ext: ext,
+          path: `${type}/${unCamelhill( name )}.${ext}`
         }
       }
-      filesLib.getFiles().then( ( nodes ) => {
-        function load(queue, loaded ){
+      filesLib.getFiles().then((nodes) => {
+        function load(queue, loaded) {
           let item = queue.shift();
-          if( item ){
-            let fd = nodes.find( ({ basename, ext }) => {
-              return camelhill( basename ) === item.name && ext === item.type;
+          if (item) {
+            let fd = nodes.find(({
+              basename,
+              ext
+            }) => {
+              return camelhill(basename) === item.name && ext === item.type;
             });
-            if(typeof fd === "undefined"){
+            if (typeof fd === "undefined") {
               log.error(`[ ${name} ] ask for dep [ ${item.type} : ${ item.name } ] is not found, will be negelect.`);
-              load( queue, loaded );
+              load(queue, loaded);
             } else {
-              if( loaded[ item.name ] ){
+              if (loaded[item.name]) {
                 log.error(`[ ${name} ] ask for dep [ ${item.type} : ${ item.type } ] is Circular invoked.`);
-                load( queue, loaded );
+                load(queue, loaded);
               } else {
-                loaded[ item.name ] = item.type;
-                fd.read().then( source => {
-                  let config = selectBlock( source, "config" ),
-                    deps = config.attributes.deps
-                      ? config.attributes.deps
-                        .split(",").map( splitData )
-                        .filter( ({path}) => {
-                          return allDeps.indexOf( path ) == -1
-                            ? allDeps.push( path ) : false;
-                        })
-                      : [];
+                loaded[item.name] = item.type;
+                fd.read().then(source => {
+                  let config = selectBlock(source, "config"),
+                    deps = config.attributes.deps ?
+                    config.attributes.deps
+                    .split(",").map(splitData)
+                    .filter(({
+                      path
+                    }) => {
+                      return allDeps.indexOf(path) == -1 ?
+                        allDeps.push(path) : false;
+                    }) : [];
 
-                  [].push.apply( queue, deps );
-                  load( queue, loaded );
+                  [].push.apply(queue, deps);
+                  load(queue, loaded);
                 })
               }
             }
           } else {
-            res( allDeps );
+            res(allDeps);
           }
         }
-        load( queue, {} );
+        load(queue, {});
       })
     })
   }
-  function makeParam( str ){
-    let arr = str.split("/").filter( d => d);
+
+  function makeParam(str) {
+    let arr = str.split("/").filter(d => d);
     return arr.length > 0 ? `/${ arr.join("/") }` : "";
   }
-  makeDeps( config ).then( d => {
+  makeDeps(config).then(d => {
     callback(null, `export default function(){
     return {
       type : "router",
@@ -100,7 +123,7 @@ module.exports = function(source){
       ctrlname : "${ name }"
     }
   }`)
-  }).catch( e => {
+  }).catch(e => {
     log.error(`${ e }`);
   });
 };

@@ -32,6 +32,7 @@
     "babel-loader": "^8.0.4",
     "css-loader": "^2.0.2",
     "express": "^4.16.4",
+    "js-beautify": "^1.10.0",
     "less": "^3.9.0",
     "less-loader": "^4.1.0",
     "loader-utils": "^1.2.3",

@@ -1,8 +1,9 @@
-const packer = require("./packer.js"),
+const Packer = require("./packer.js"),
   moduleList = require("./moduleList.js");
 class Command {
   constructor(config = {}) {
     this.prefix = config.prefix || "ps";
+    this.packer = new Packer();
   }
   getFactory(factory) {
     let name = [factory];
@@ -27,11 +28,11 @@ class Command {
       factory,
       path,
       file
-    } = getFactoryQuery(str);
-    moduleList = new moduleList(factory, path, file);
-    packer.pack(moduleList, nodes => {
-      console.log(nodes);
-    });
+    } = this.getFactoryQuery(str),
+      moduleListIns = new moduleList(factory, path, file);
+    moduleListIns.allLoaded.then(() => {
+      this.packer.pack(moduleListIns.moduleList, nodes => {});
+    })
   }
 }
 module.exports = Command;

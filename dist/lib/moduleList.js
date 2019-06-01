@@ -18,7 +18,8 @@ class MakeConfig {
     if (All.indexOf(path) != -1) {
       throw new Error(`please use for instance "controllers/* instead."`);
     }
-    this.path = files == "*" ? [`all${toUpper(path)}`] : [path];
+    this.path = file == "*" ? [`all${toUpper(path)}`] : [path];
+    this.file = file;
   }
 }
 class ModuleList {

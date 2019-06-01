@@ -11,15 +11,17 @@ function runItem(obj) {
 class Packer {
   constructor() {}
   pack(moduleList, callback) {
-    let gen = runWebpackList(moduleList.filter(module => module.isModified()));
+    const gen = runWebpackList(
+      moduleList.filter(module => module.isModified())
+    );
     let rs = [];
     gen.next();
 
     function* runWebpackList(list) {
-      let item = list.shift();
+      let item;
       while (item = list.shift()) {
-        yield runWebpack(runItem(item))
-      }
+        yield runWebpack(runItem(item));
+      };
       callback(rs);
     }
 
@@ -30,12 +32,16 @@ class Packer {
       let webpackConfig = {
         entry: entry,
         output: output
-      }
+      };
       rs.push(webpackConfig);
-      webpack(webpackConfig).then(d => {
+      setTimeout(() => {
         gen.next();
-      })
+      });
+      /* 
+            webpack(webpackConfig).then(d => {
+              gen.next();
+            }) */
     }
   }
 }
-module.exports = Packer
+module.exports = Packer;

@@ -2,8 +2,8 @@ const _filePath = process.cwd(),
   workPath = getWorkPath(__filename),
   pathLib = require("path"),
   psFile = require("ps-file"),
-  PathMaker = require("./path-maker.js"),
-  getFileStateInstance = require("./file-state.js")();
+  PathMaker = require("./path-maker.js");
+getFileStateInstance = require("./file-state.js");
 
 function getWorkPath(path) {
   let match = new RegExp("(.*)(?:\\\\|\\/)[^\\\/]+$").exec(path);
@@ -14,6 +14,24 @@ function getWorkPath(path) {
 }
 
 function loadFiles(factory, arr) {
+  let tester = {
+    controllers(ext) {
+      return ext == "controller";
+    },
+    services(ext) {
+      return ext == "service";
+    },
+    directives(ext) {
+      return ext == "directive";
+    },
+    styles(ext) {
+      return new RegExp("css|less|scss|sass").test(ext);
+    }
+  }
+
+  function check(str) {
+    return arr.some(n => tester[n](str))
+  }
   return new Promise((res, rej) => {
     let gen;
 
@@ -27,15 +45,21 @@ function loadFiles(factory, arr) {
       res(rs);
     }
 
+    function noExclude(path) {
+      return !RegExp("(\\\\|\\/)exclude(?:d)?\\1").test(path);
+    }
+
     function loadFn(item) {
       let f = pathLib.join(_filePath, `./${factory}/${item}`);
       psFile(f)
-        .children(() => true)
+        .children(n => {
+          return !n.isDir && check(n.ext) && noExclude(n.path);
+        })
         .then(d => {
           gen.next(d);
         });
     }
-    gen = loadFilesGen(arr);
+    gen = loadFilesGen(arr.slice());
     gen.next();
   });
 }
@@ -61,12 +85,12 @@ function makeEntry(query) {
   ).getPath();
 }
 class Output {
-  constructor(filePath, fileName) {
+  constructor(factory, filePath, fileName) {
     if (fileName == null) {
       fileName = filePath;
       filePath = "./build";
     }
-    this.path = pathLib.resolve(_filePath, filePath);
+    this.path = pathLib.resolve(_filePath, factory, filePath);
     this.filename = fileName;
   }
 }
@@ -83,9 +107,10 @@ class Module {
     let explainer = {
       async output() {
         this.entry = makeEntry({
+          factory: factory,
           path: "output"
         });
-        this.output = new Output("output.js");
+        this.output = new Output(factory, "output.js");
         return await loadFiles(factory, [
           "controllers",
           "services",
@@ -95,40 +120,43 @@ class Module {
       },
       "controller.config": async () => {
         this.entry = makeEntry({
+          factory: factory,
           path: "config"
         });
-        this.output = new Output("controller.config.js");
+        this.output = new Output(factory, "controller.config.js");
         return await loadFiles(factory, ["controllers"]);
       },
       async allControllers() {
         let files = await loadFiles(factory, ["controllers"]);
-        this.entry = function _makeEntry() {
-          this.entry = files.reduce((a, b) => {
-            if (b.isModified()) {
+        this.entry = () => {
+          return this.deps.reduce((a, b) => {
+            if (this.fileState.isModified(b.path)) {
               a[b.basename] = makeEntry({
+                factory: factory,
                 path: "controllers",
                 file: b.basename
               });
             }
             return a;
-          });
+          }, {});
         };
-        this.output = new Output("./build/controllers", `[name].js`);
+        this.output = new Output(factory, "./build/controller", `[name].js`);
         return files;
       },
       async controllers(file) {
         if (file == null) {
           this.entry = makeEntry({
-            path: "controllers",
-            file: file
+            factory: factory,
+            path: "controllers"
           });
-          this.output = new Output("controllers.js");
+          this.output = new Output(factory, "controllers.js");
         } else {
           this.entry = makeEntry({
+            factory: factory,
             path: "controllers",
             file: file
           });
-          this.output = new Output("./build/controllers", `${file}.js`);
+          this.output = new Output(factory, "./build/controller", `${file}.js`);
         }
         return await loadFiles(factory, ["controllers"]).then(
           filterByBaseName(file)
@@ -136,59 +164,82 @@ class Module {
       },
       async allServices() {
         let files = await loadFiles(factory, ["services"]);
-        this.entry = function _makeEntry() {
-          return files.reduce((a, b) => {
-            if (b.isModified()) {
+        this.entry = () => {
+          return this.deps.reduce((a, b) => {
+            if (this.fileState.isModified(b.path)) {
               a[b.basename] = makeEntry({
+                factory: factory,
                 path: "services",
                 file: b.basename
               });
             }
             return a;
-          });
-        }
-        this.output = new Output("./build/services", `[name].js`);
+          }, {});
+        };
+        this.output = new Output(factory, "./build/service", `[name].js`);
         return files;
       },
       async services(file) {
-        this.entry = makeEntry({
-          path: "services",
-          file: file
-        });
+        if (file == null) {
+          this.entry = makeEntry({
+            factory: factory,
+            path: "services"
+          });
+          this.output = new Output(factory, "services.js");
+        } else {
+          this.entry = makeEntry({
+            factory: factory,
+            path: "services",
+            file: file
+          });
+          this.output = new Output(factory, "./build/service", `${file}.js`);
+        }
         return await loadFiles(factory, ["services"]).then(
           filterByBaseName(file)
         );
       },
       async allDirectives() {
         let files = await loadFiles(factory, ["directives"]);
-        this.entry = function _makeEntry() {
-          return files.reduce((a, b) => {
-            if (b.isModified()) {
+        this.entry = () => {
+          return this.deps.reduce((a, b) => {
+            if (this.fileState.isModified(b.path)) {
               a[b.basename] = makeEntry({
+                factory: factory,
                 path: "directives",
                 file: b.basename
               });
             }
             return a;
-          });
-        }
-        this.output = new Output("./build/directives", `[name].js`);
+          }, {});
+        };
+        this.output = new Output(factory, "./build/directive", `[name].js`);
         return files;
       },
       async directives(file) {
-        this.entry = makeEntry({
-          path: "directives",
-          file: file
-        });
+        if (file == null) {
+          this.entry = makeEntry({
+            factory: factory,
+            path: "directives"
+          });
+          this.output = new Output(factory, "directives.js");
+        } else {
+          this.entry = makeEntry({
+            factory: factory,
+            path: "directives",
+            file: file
+          });
+          this.output = new Output(factory, "./build/directive", `${file}.js`);
+        }
         return await loadFiles(factory, ["directives"]).then(
           filterByBaseName(file)
         );
       },
       async styles(file) {
         this.entry = makeEntry({
-          path: "styles",
-          file: file
+          factory: factory,
+          path: "styles"
         });
+        this.output = new Output(factory, "style.css");
         return await loadFiles(factory, ["styles"]).then(
           filterByBaseName(file)
         );
@@ -207,7 +258,7 @@ class Module {
     });
   }
   isModified() {
-    return this.fileState.isModified(this.deps.filter(dep => dep.path));
+    return this.fileState.isModified(this.deps.map(dep => dep.path));
   }
 }
 module.exports = Module;

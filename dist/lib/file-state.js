@@ -26,7 +26,7 @@ class FileStates {
   }
   isModified(ids) {
     ids = isArray(ids) ? ids : [ids];
-    return id.some(id => {
+    return ids.some(id => {
       let st = this.get(id);
       return st.isModified;
     });
@@ -57,4 +57,4 @@ function getFileStateInstance() {
     return instance;
   }
 }
-module.exports = getFileStateInstance;
+module.exports = getFileStateInstance();

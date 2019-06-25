@@ -96,13 +96,20 @@ class Output {
 }
 class Module {
   constructor(factory, path, file) {
-    this.factory = factory;
-    this.fileState = getFileStateInstance();
-    this.path = path;
-    this.file = file;
     this.deps = [];
     this.entry = "";
     this.output = "";
+    this.factory = factory;
+    this.path = path;
+    this.file = file;
+    this.fileState = getFileStateInstance();
+  }
+  init() {
+    let {
+      factory,
+      path,
+      file
+    } = this;
     this.isLoaded = false;
     let explainer = {
       async output() {
@@ -250,7 +257,7 @@ class Module {
       throw new Error(`${path} cannot be found!`);
     }
 
-    this.loaded = fn.call(this, file).then(deps => {
+    return fn.call(this, file).then(deps => {
       this.deps = deps;
       this.isLoaded = true;
       this.fileState.setGroup(deps);

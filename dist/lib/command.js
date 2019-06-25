@@ -1,5 +1,5 @@
 const Packer = require("./packer.js"),
-  moduleList = require("./moduleList.js");
+  createModuleMap = require("./moduleMap.js");
 class Command {
   constructor(config = {}) {
     this.prefix = config.prefix || "ps";
@@ -28,11 +28,11 @@ class Command {
       factory,
       path,
       file
-    } = this.getFactoryQuery(str),
-      moduleListIns = new moduleList(factory, path, file);
-    moduleListIns.allLoaded.then(() => {
-      this.packer.pack(moduleListIns.moduleList, nodes => {});
-    })
+    } = this.getFactoryQuery(str);
+    moduleMap = createModuleMap();
+    moduleMap.init(factory, path, file).then(moduleList => {
+      this.packer.pack(moduleList, nodes => {});
+    });
   }
 }
 module.exports = Command;

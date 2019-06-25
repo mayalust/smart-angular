@@ -2,7 +2,7 @@ const workPath = getWorkPath(__filename),
   {
     js
   } = require("js-beautify"),
-  Module = require("./module.js"),
+  createModuleMap = require("./moduleMap.js"),
   pathLib = require("path"),
   loaderUtils = require('loader-utils'),
   {
@@ -19,15 +19,34 @@ function getWorkPath(path) {
   }
   return match[1];
 }
-class Loader {
+
+function loader() {
+  let callback = this.async(),
+    {
+      resourceQuery
+    } = this,
+    {
+      exclude
+    } = loaderUtils.getOptions(this),
+    query = parse(resourceQuery.slice(1)),
+    {
+      factory,
+      path,
+      file
+    } = query,
+    loader = new Loader(factory, path, file);
+  return loader.getScript();
+}
+class LoaderMake {
   constructor(factory, path, file) {
+    let moduleMap = createModuleMap();
     this.factory = factory;
     this.path = path;
     this.file = file;
-    this.module = new Module(factory, path, file);
+    this.moduleLoaded = moduleMap.init(factory, path, file).then(moduleList => Promise.resolve(moduleList[0]));
   }
   getDeps() {
-    return this.module.loaded.then(() => Promise.resolve(this.module.deps));
+    return this.moduleLoaded.then(module => Promise.resolve(module.deps));
   }
   getHead() {
     return [`import { render } from ${genRequest.call( this, [ pathLib.resolve(workPath, './angular-loader.js') ], {}, false )}`,
@@ -83,21 +102,5 @@ class Loader {
     return `require(${genRequest.call( this, [ path ], null, false )})`;
   }
 }
-module.exports = function () {
-  let callback = this.async(),
-    {
-      resourceQuery
-    } = this,
-    {
-      exclude
-    } = loaderUtils.getOptions(this),
-    query = parse(resourceQuery.slice(1)),
-    {
-      factory,
-      path,
-      file
-    } = query,
-    loader = new Loader(factory, path, file);
-  return loader.getScript();
-}
-module.exports.Loader = Loader;
+module.exports = loader;
+module.exports.Loader = LoaderMake;

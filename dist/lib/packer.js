@@ -31,15 +31,7 @@ class Packer {
           module: modules,
           plugins: plugins,
         }
-        /* 
-        setTimeout(() => {
-          gen.next();
-        }); */
         webpack(webpackConfig, e => {
-          console.log(e);
-          if (e != null) {
-            console.log(e);
-          }
           gen.next();
         });
       }

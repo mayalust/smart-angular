@@ -1,4 +1,5 @@
-const Module = require("./module.js");
+const Module = require("./module.js"),
+  getFileStateInstance = require("./file-state.js");
 
 function toUpper(str) {
   return str[0].toUpperCase() + str.substring(1);
@@ -24,8 +25,12 @@ class MakeConfig {
 }
 class ModuleMap {
   constructor() {
+    this.fileState = getFileStateInstance();
     this.moduleMap = {};
     this.ALL = Symbol("ALL");
+  }
+  reset() {
+    this.fileState.clear();
   }
   init(fa, pa, fi) {
     let {
@@ -36,7 +41,16 @@ class ModuleMap {
       moduleList = path.map(p => {
         return this.attr(factory, p, file) || new Module(factory, p, file);
       });
-    return Promise.all(moduleList.map(module => module.init())).then(() => Promise.resolve(moduleList))
+    return Promise.all(moduleList.map(module => module.init())).then(depsGroup => {
+      let combineIds = depsGroup.reduce((a, b) => {
+        b.forEach(n => {
+          a[n.path] = n;
+        });
+        return a;
+      }, {});
+      this.fileState.setGroup(Object.values(combineIds));
+      return Promise.resolve(moduleList)
+    })
   }
   attr(p1, p2, p3, d) {
     let obj = this.moduleMap;

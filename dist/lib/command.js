@@ -30,6 +30,7 @@ class Command {
       file
     } = this.getFactoryQuery(str),
       moduleMap = createModuleMap();
+    moduleMap.reset();
     moduleMap.init(factory, path, file).then(moduleList => {
       this.packer.pack(moduleList, nodes => {
         callback && callback.call(this, nodes);

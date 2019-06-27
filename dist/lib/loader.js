@@ -78,13 +78,13 @@ class LoaderMake {
         path,
         ext
       }) => {
-        let text;
-        if (new RegExp("css|less|scss|sass").test(ext)) {
-          text = this.renderCss(path);
-        } else {
-          text = this.renderTxt(path);
+        if (this.path == "controller.config") {
+          return this.renderConfig(path)
         }
-        return text;
+        if (new RegExp("css|less|scss|sass").test(ext)) {
+          return this.renderCss(path);
+        }
+        return this.renderTxt(path);
       });
       return Promise.resolve(rs);
     });

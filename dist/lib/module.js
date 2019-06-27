@@ -9,8 +9,8 @@ const _filePath = process.cwd(),
   {
     parse
   } = require("querystring"),
-  PathMaker = require("./path-maker.js");
-getFileStateInstance = require("./file-state.js");
+  PathMaker = require("./path-maker.js"),
+  getFileStateInstance = require("./file-state.js");
 
 function getWorkPath(path) {
   let match = new RegExp("(.*)(?:\\\\|\\/)[^\\/]+$").exec(path);
@@ -94,50 +94,65 @@ function makeEntry(query) {
 class WebpackModule {
   constructor() {
     this.rules = [{
-      test: /\.js$/,
-      use: {
-        loader: 'babel-loader',
-        options: {
-          presets: ['@babel/preset-env']
+        test: /\.js$/,
+        use: {
+          loader: "babel-loader",
+          options: {
+            presets: ["@babel/preset-env"]
+          }
+        }
+      },
+      {
+        test: /\.angular/,
+        use: ["ps-angular-loader"]
+      },
+      {
+        test: /\.css$/,
+        use: [{
+            loader: MiniCssExtractPlugin.loader
+          },
+          "css-loader"
+        ]
+      },
+      {
+        test: /\.less$/,
+        use: [{
+            loader: MiniCssExtractPlugin.loader
+          },
+          "css-loader",
+          "less-loader"
+        ]
+      },
+      {
+        test: /\.(?:scss)|(?:sass)/,
+        use: [{
+            loader: MiniCssExtractPlugin.loader
+          },
+          "css-loader",
+          "sass-loader"
+        ]
+      },
+      {
+        test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
+        use: "url-loader"
+      },
+      {
+        resource: d => {
+          return true;
+        },
+        resourceQuery: query => {
+          let pa = parse(query.slice(1));
+          return pa.smartangular != null;
+        },
+        use: {
+          loader: pathLib.resolve(workPath, "./loader.js"),
+          options: {
+            exclude: [/\.test/, /([\\\/])exclude\1/],
+            renderWhileStart: true
+          }
         }
       }
-    }, {
-      test: /\.angular/,
-      use: ["ps-angular-loader"]
-    }, {
-      test: /\.css$/,
-      use: [{
-        loader: MiniCssExtractPlugin.loader
-      }, "css-loader"]
-    }, {
-      test: /\.less$/,
-      use: [{
-        loader: MiniCssExtractPlugin.loader
-      }, "css-loader", "less-loader"]
-    }, {
-      test: /\.(?:scss)|(?:sass)/,
-      use: [{
-        loader: MiniCssExtractPlugin.loader
-      }, "css-loader", "sass-loader"]
-    }, {
-      test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
-      use: "url-loader"
-    }, {
-      resource: d => {
-        return true;
-      },
-      resourceQuery: query => {
-        let pa = parse(query.slice(1));
-        return pa.smartangular != null;
-      },
-      use: {
-        loader: pathLib.resolve(workPath, "./loader.js"),
-        options: {
-          exclude: [/\.test/, /([\\\/])exclude\1/],
-          renderWhileStart: true
-        }
-      }
-    }];
+    ];
   }
 }
 class Output {
@@ -178,7 +193,12 @@ class Module {
         });
         this.output = new Output(factory, "output.js");
         this.modules = new WebpackModule();
-        this.plugins = [new angularLoaderPlugin()];
+        this.plugins = [
+          new angularLoaderPlugin(), new MiniCssExtractPlugin({
+            filename: `output.css`,
+            chunkFilename: `[id].css`
+          })
+        ];
         return await loadFiles(factory, [
           "controllers",
           "services",
@@ -189,12 +209,14 @@ class Module {
       "controller.config": async () => {
         this.entry = makeEntry({
           factory: factory,
-          path: "config",
+          path: "controller.config",
           smartangular: null
         });
         this.output = new Output(factory, "controller.config.js");
         this.modules = new WebpackModule();
-        this.plugins = [new angularLoaderPlugin()];
+        this.plugins = [
+          new angularLoaderPlugin()
+        ];
         return await loadFiles(factory, ["controllers"]);
       },
       async allControllers() {
@@ -213,7 +235,13 @@ class Module {
         };
         this.output = new Output(factory, "./build/controller", `[name].js`);
         this.modules = new WebpackModule();
-        this.plugins = [new angularLoaderPlugin()];
+        this.plugins = [
+          new angularLoaderPlugin(),
+          new MiniCssExtractPlugin({
+            filename: `[name].css`,
+            chunkFilename: `[id].css`
+          })
+        ];
         return files;
       },
       async controllers(file) {
@@ -224,6 +252,12 @@ class Module {
             smartangular: null
           });
           this.output = new Output(factory, "controllers.js");
+          this.plugins = [
+            new angularLoaderPlugin(), new MiniCssExtractPlugin({
+              filename: `controller.css`,
+              chunkFilename: `[id].css`
+            })
+          ];
         } else {
           this.entry = makeEntry({
             factory: factory,
@@ -232,7 +266,13 @@ class Module {
             smartangular: null
           });
           this.output = new Output(factory, "./build/controller", `${file}.js`);
-          this.plugins = [new angularLoaderPlugin()];
+          this.plugins = [
+            new angularLoaderPlugin(),
+            new MiniCssExtractPlugin({
+              filename: `controller.css`,
+              chunkFilename: `[id].css`
+            })
+          ];
         }
         this.modules = new WebpackModule();
         return await loadFiles(factory, ["controllers"]).then(
@@ -256,7 +296,13 @@ class Module {
         };
         this.output = new Output(factory, "./build/service", `[name].js`);
         this.modules = new WebpackModule();
-        this.plugins = [new angularLoaderPlugin()];
+        this.plugins = [
+          new angularLoaderPlugin(),
+          new MiniCssExtractPlugin({
+            filename: `[name].css`,
+            chunkFilename: `[id].css`
+          })
+        ];
         return files;
       },
       async services(file) {
@@ -275,8 +321,10 @@ class Module {
             smartangular: null
           });
           this.output = new Output(factory, "./build/service", `${file}.js`);
-          this.plugins = [new angularLoaderPlugin()];
         }
+        this.plugins = [
+          new angularLoaderPlugin()
+        ];
         this.modules = new WebpackModule();
         return await loadFiles(factory, ["services"]).then(
           filterByBaseName(file)
@@ -299,7 +347,13 @@ class Module {
         };
         this.output = new Output(factory, "./build/directive", `[name].js`);
         this.modules = new WebpackModule();
-        this.plugins = [new angularLoaderPlugin()];
+        this.plugins = [
+          new angularLoaderPlugin(),
+          new MiniCssExtractPlugin({
+            filename: `[name].css`,
+            chunkFilename: `[id].css`
+          })
+        ];
         return files;
       },
       async directives(file) {
@@ -320,7 +374,13 @@ class Module {
           this.output = new Output(factory, "./build/directive", `${file}.js`);
         }
         this.modules = new WebpackModule();
-        this.plugins = [new angularLoaderPlugin()];
+        this.plugins = [
+          new angularLoaderPlugin(),
+          new MiniCssExtractPlugin({
+            filename: `directive.css`,
+            chunkFilename: `[id].css`
+          })
+        ];
         return await loadFiles(factory, ["directives"]).then(
           filterByBaseName(file)
         );
@@ -333,7 +393,13 @@ class Module {
         });
         this.output = new Output(factory, "style.css");
         this.modules = new WebpackModule();
-        this.plugins = [new angularLoaderPlugin()];
+        this.plugins = [
+          new angularLoaderPlugin(),
+          new MiniCssExtractPlugin({
+            filename: `style.css`,
+            chunkFilename: `[id].css`
+          })
+        ];
         return await loadFiles(factory, ["styles"]).then(
           filterByBaseName(file)
         );
@@ -347,12 +413,23 @@ class Module {
     return fn.call(this, file).then(deps => {
       this.deps = deps;
       this.isLoaded = true;
-      this.fileState.setGroup(deps);
       return Promise.resolve(deps);
     });
   }
   isModified() {
-    return this.fileState.isModified(this.deps.map(dep => dep.path));
+    if (this.deps.length == 1) {
+      let a = this.fileState.isModified([this.deps[0].path]);
+      if (a) {
+        let b = this.fileState.get(this.deps[0].path);
+        //console.log(b);
+      }
+    }
+    let rs = this.fileState.isModified(this.deps.map(dep => dep.path));
+    if (this.deps.length > 4) {
+      let c = this.fileState.get(this.deps[4].path);
+      //console.log(c);
+    }
+    return rs;
   }
 }
 module.exports = Module;

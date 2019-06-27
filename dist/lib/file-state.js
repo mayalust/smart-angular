@@ -12,9 +12,12 @@ class FileStates {
     let st = this.filesMap.get(id);
     if (st == null) {
       this.filesMap.set(id, new State(id, file));
-    } else {
-      st.setModifyTime(file.modifytime - 0);
+      st = this.filesMap.get(id);
     }
+    st.setModifyTime(file.modifytime - 0)
+  }
+  clear() {
+    this.filesMap = new Map();
   }
   setGroup(files) {
     files.forEach(file => {

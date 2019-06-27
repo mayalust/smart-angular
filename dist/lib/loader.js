@@ -9,6 +9,9 @@ const workPath = getWorkPath(__filename),
     ultils
   } = require("ps-angular-loader"),
   {
+    parse
+  } = require("querystring"),
+  {
     genRequest
   } = ultils;
 
@@ -34,8 +37,10 @@ function loader() {
       path,
       file
     } = query,
-    loader = new Loader(factory, path, file);
-  return loader.getScript();
+    loader = new LoaderMake(factory, path, file);
+  loader.getScript().then(script => {
+    callback(null, script);
+  });
 }
 class LoaderMake {
   constructor(factory, path, file) {
@@ -102,5 +107,6 @@ class LoaderMake {
     return `require(${genRequest.call( this, [ path ], null, false )})`;
   }
 }
-module.exports = loader;
+module.exports = d => d;
+module.exports.pitch = loader;
 module.exports.Loader = LoaderMake;

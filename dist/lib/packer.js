@@ -9,12 +9,40 @@ function runItem(obj) {
   return obj;
 }
 class Packer {
-  constructor() {}
+  constructor(mode, sourcemap) {
+    this.mode = mode || "development";
+    this.devtool = sourcemap || "source-map";
+  }
   pack(moduleList, callback) {
     const gen = runWebpackList(
-      moduleList.filter(module => module.isModified())
-    );
-    let rs = [];
+        moduleList.filter(module => module.isModified())
+      ),
+      runWebpack = ({
+        entry,
+        output,
+        modules,
+        plugins
+      }) => {
+        let webpackConfig = {
+          entry: entry,
+          output: output,
+          mode: this.mode,
+          devtool: this.devtool,
+          module: modules,
+          plugins: plugins,
+        }
+        /* 
+        setTimeout(() => {
+          gen.next();
+        }); */
+        webpack(webpackConfig, e => {
+          console.log(e);
+          if (e != null) {
+            console.log(e);
+          }
+          gen.next();
+        });
+      }
     gen.next();
 
     function* runWebpackList(list) {
@@ -22,25 +50,7 @@ class Packer {
       while (item = list.shift()) {
         yield runWebpack(runItem(item));
       };
-      callback(rs);
-    }
-
-    function runWebpack({
-      entry,
-      output
-    }) {
-      let webpackConfig = {
-        entry: entry,
-        output: output
-      };
-      rs.push(webpackConfig);
-      setTimeout(() => {
-        gen.next();
-      });
-      /* 
-            webpack(webpackConfig).then(d => {
-              gen.next();
-            }) */
+      callback();
     }
   }
 }

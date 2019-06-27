@@ -6,20 +6,20 @@ const {
 } = require("ps-ultility");
 class FileStates {
   constructor() {
-    this.filesMap = new Map;
+    this.filesMap = new Map();
   }
   set(id, file) {
     let st = this.filesMap.get(id);
     if (st == null) {
       this.filesMap.set(id, new State(id, file));
     } else {
-      st.setFile(file);
+      st.setModifyTime(file.modifytime - 0);
     }
   }
   setGroup(files) {
     files.forEach(file => {
       this.set(file.path, file);
-    })
+    });
   }
   get(id) {
     return this.filesMap.get(id);
@@ -36,17 +36,24 @@ class State {
   constructor(id, file) {
     this.id = id;
     this.file = file;
+    this.oldModifyTime = this.modifyTime = null;
   }
-  setFile(file) {
-    this.oldFile = this.file;
-    this.file = file;
+  setModifyTime(modifyTime) {
+    this.oldModifyTime = this.modifyTime;
+    this.modifyTime = modifyTime;
   }
 }
 Object.defineProperty(State.prototype, "isModified", {
   get() {
-    return this.oldFile.modifytime != this.file.modifytime;
+    if (
+      this.modifyTime
+    ) {
+      return this.oldModifyTime != this.modifyTime;
+    } else {
+      return false;
+    }
   }
-})
+});
 
 function getFileStateInstance() {
   let instance;
@@ -55,6 +62,6 @@ function getFileStateInstance() {
       instance = new FileStates();
     }
     return instance;
-  }
+  };
 }
 module.exports = getFileStateInstance();

@@ -2,11 +2,18 @@ const _filePath = process.cwd(),
   workPath = getWorkPath(__filename),
   pathLib = require("path"),
   psFile = require("ps-file"),
+  MiniCssExtractPlugin = require("mini-css-extract-plugin"),
+  {
+    angularLoaderPlugin
+  } = require("ps-angular-loader"),
+  {
+    parse
+  } = require("querystring"),
   PathMaker = require("./path-maker.js");
 getFileStateInstance = require("./file-state.js");
 
 function getWorkPath(path) {
-  let match = new RegExp("(.*)(?:\\\\|\\/)[^\\\/]+$").exec(path);
+  let match = new RegExp("(.*)(?:\\\\|\\/)[^\\/]+$").exec(path);
   if (match == null) {
     throw new Error("__workPath is invalid!");
   }
@@ -27,10 +34,10 @@ function loadFiles(factory, arr) {
     styles(ext) {
       return new RegExp("css|less|scss|sass").test(ext);
     }
-  }
+  };
 
   function check(str) {
-    return arr.some(n => tester[n](str))
+    return arr.some(n => tester[n](str));
   }
   return new Promise((res, rej) => {
     let gen;
@@ -80,9 +87,58 @@ function filterByBaseName(file) {
 
 function makeEntry(query) {
   return new PathMaker(
-    pathLib.resolve(workPath, `./loaders/angular-loader.js`),
+    pathLib.resolve(workPath, `./angular-loader.js`),
     query
   ).getPath();
+}
+class WebpackModule {
+  constructor() {
+    this.rules = [{
+      test: /\.js$/,
+      use: {
+        loader: 'babel-loader',
+        options: {
+          presets: ['@babel/preset-env']
+        }
+      }
+    }, {
+      test: /\.angular/,
+      use: ["ps-angular-loader"]
+    }, {
+      test: /\.css$/,
+      use: [{
+        loader: MiniCssExtractPlugin.loader
+      }, "css-loader"]
+    }, {
+      test: /\.less$/,
+      use: [{
+        loader: MiniCssExtractPlugin.loader
+      }, "css-loader", "less-loader"]
+    }, {
+      test: /\.(?:scss)|(?:sass)/,
+      use: [{
+        loader: MiniCssExtractPlugin.loader
+      }, "css-loader", "sass-loader"]
+    }, {
+      test: /\.(png|jpe?g|gif|svg)(\?.*)?$/,
+      use: "url-loader"
+    }, {
+      resource: d => {
+        return true;
+      },
+      resourceQuery: query => {
+        let pa = parse(query.slice(1));
+        return pa.smartangular != null;
+      },
+      use: {
+        loader: pathLib.resolve(workPath, "./loader.js"),
+        options: {
+          exclude: [/\.test/, /([\\\/])exclude\1/],
+          renderWhileStart: true
+        }
+      }
+    }];
+  }
 }
 class Output {
   constructor(factory, filePath, fileName) {
@@ -99,6 +155,8 @@ class Module {
     this.deps = [];
     this.entry = "";
     this.output = "";
+    this.modules = null;
+    this.plugins = null;
     this.factory = factory;
     this.path = path;
     this.file = file;
@@ -115,9 +173,12 @@ class Module {
       async output() {
         this.entry = makeEntry({
           factory: factory,
-          path: "output"
+          path: "output",
+          smartangular: null
         });
         this.output = new Output(factory, "output.js");
+        this.modules = new WebpackModule();
+        this.plugins = [new angularLoaderPlugin()];
         return await loadFiles(factory, [
           "controllers",
           "services",
@@ -128,9 +189,12 @@ class Module {
       "controller.config": async () => {
         this.entry = makeEntry({
           factory: factory,
-          path: "config"
+          path: "config",
+          smartangular: null
         });
         this.output = new Output(factory, "controller.config.js");
+        this.modules = new WebpackModule();
+        this.plugins = [new angularLoaderPlugin()];
         return await loadFiles(factory, ["controllers"]);
       },
       async allControllers() {
@@ -148,23 +212,29 @@ class Module {
           }, {});
         };
         this.output = new Output(factory, "./build/controller", `[name].js`);
+        this.modules = new WebpackModule();
+        this.plugins = [new angularLoaderPlugin()];
         return files;
       },
       async controllers(file) {
         if (file == null) {
           this.entry = makeEntry({
             factory: factory,
-            path: "controllers"
+            path: "controllers",
+            smartangular: null
           });
           this.output = new Output(factory, "controllers.js");
         } else {
           this.entry = makeEntry({
             factory: factory,
             path: "controllers",
-            file: file
+            file: file,
+            smartangular: null
           });
           this.output = new Output(factory, "./build/controller", `${file}.js`);
+          this.plugins = [new angularLoaderPlugin()];
         }
+        this.modules = new WebpackModule();
         return await loadFiles(factory, ["controllers"]).then(
           filterByBaseName(file)
         );
@@ -177,30 +247,37 @@ class Module {
               a[b.basename] = makeEntry({
                 factory: factory,
                 path: "services",
-                file: b.basename
+                file: b.basename,
+                smartangular: null
               });
             }
             return a;
           }, {});
         };
         this.output = new Output(factory, "./build/service", `[name].js`);
+        this.modules = new WebpackModule();
+        this.plugins = [new angularLoaderPlugin()];
         return files;
       },
       async services(file) {
         if (file == null) {
           this.entry = makeEntry({
             factory: factory,
-            path: "services"
+            path: "services",
+            smartangular: null
           });
           this.output = new Output(factory, "services.js");
         } else {
           this.entry = makeEntry({
             factory: factory,
             path: "services",
-            file: file
+            file: file,
+            smartangular: null
           });
           this.output = new Output(factory, "./build/service", `${file}.js`);
+          this.plugins = [new angularLoaderPlugin()];
         }
+        this.modules = new WebpackModule();
         return await loadFiles(factory, ["services"]).then(
           filterByBaseName(file)
         );
@@ -213,30 +290,37 @@ class Module {
               a[b.basename] = makeEntry({
                 factory: factory,
                 path: "directives",
-                file: b.basename
+                file: b.basename,
+                smartangular: null
               });
             }
             return a;
           }, {});
         };
         this.output = new Output(factory, "./build/directive", `[name].js`);
+        this.modules = new WebpackModule();
+        this.plugins = [new angularLoaderPlugin()];
         return files;
       },
       async directives(file) {
         if (file == null) {
           this.entry = makeEntry({
             factory: factory,
-            path: "directives"
+            path: "directives",
+            smartangular: null
           });
           this.output = new Output(factory, "directives.js");
         } else {
           this.entry = makeEntry({
             factory: factory,
             path: "directives",
-            file: file
+            file: file,
+            smartangular: null
           });
           this.output = new Output(factory, "./build/directive", `${file}.js`);
         }
+        this.modules = new WebpackModule();
+        this.plugins = [new angularLoaderPlugin()];
         return await loadFiles(factory, ["directives"]).then(
           filterByBaseName(file)
         );
@@ -244,9 +328,12 @@ class Module {
       async styles(file) {
         this.entry = makeEntry({
           factory: factory,
-          path: "styles"
+          path: "styles",
+          smartangular: null
         });
         this.output = new Output(factory, "style.css");
+        this.modules = new WebpackModule();
+        this.plugins = [new angularLoaderPlugin()];
         return await loadFiles(factory, ["styles"]).then(
           filterByBaseName(file)
         );

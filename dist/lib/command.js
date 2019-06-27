@@ -20,7 +20,7 @@ class Command {
       file: arr[2]
     };
   }
-  pack(str) {
+  pack(str, callback) {
     if (typeof str !== "string") {
       throw new Error("invalid input!!");
     }
@@ -28,10 +28,12 @@ class Command {
       factory,
       path,
       file
-    } = this.getFactoryQuery(str);
-    moduleMap = createModuleMap();
+    } = this.getFactoryQuery(str),
+      moduleMap = createModuleMap();
     moduleMap.init(factory, path, file).then(moduleList => {
-      this.packer.pack(moduleList, nodes => {});
+      this.packer.pack(moduleList, nodes => {
+        callback && callback.call(this, nodes);
+      });
     });
   }
 }

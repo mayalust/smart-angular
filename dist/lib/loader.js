@@ -4,7 +4,7 @@ const workPath = getWorkPath(__filename),
   } = require("js-beautify"),
   createModuleMap = require("./moduleMap.js"),
   pathLib = require("path"),
-  loaderUtils = require('loader-utils'),
+  loaderUtils = require("loader-utils"),
   {
     ultils
   } = require("ps-angular-loader"),
@@ -16,7 +16,7 @@ const workPath = getWorkPath(__filename),
   } = ultils;
 
 function getWorkPath(path) {
-  let match = new RegExp("(.*)(?:\\\\|\\/)[^\\\/]+$").exec(path);
+  let match = new RegExp("(.*)(?:\\\\|\\/)[^\\/]+$").exec(path);
   if (match == null) {
     throw new Error("__workPath is invalid!");
   }
@@ -48,29 +48,37 @@ class LoaderMake {
     this.factory = factory;
     this.path = path;
     this.file = file;
-    this.moduleLoaded = moduleMap.init(factory, path, file).then(moduleList => Promise.resolve(moduleList[0]));
+    this.moduleLoaded = moduleMap
+      .init(factory, path, file)
+      .then(moduleList => Promise.resolve(moduleList[0]));
   }
   getDeps() {
     return this.moduleLoaded.then(module => Promise.resolve(module.deps));
   }
   getHead() {
-    return [`import { render } from ${genRequest.call( this, [ pathLib.resolve(workPath, './angular-loader.js') ], {}, false )}`,
+    return [
+      `import { render } from ${genRequest.call(
+        this,
+        [pathLib.resolve(workPath, "./angular-loader.js")],
+        {},
+        false
+      )}`,
       `var handlers = []`
-    ]
+    ];
   }
   getContent() {
     return this.getBody().then(body => {
-      let contents = this.getHead()
+      let contents = this.getHead();
       contents = contents.concat(body);
       contents = contents.concat(this.getTail());
       contents = contents.concat(this.getEnd());
       return Promise.resolve(contents);
-    })
+    });
   }
   getScript() {
     return this.getContent().then(content => {
       return js(content.join("\n"));
-    })
+    });
   }
   getBody() {
     return this.getDeps().then(deps => {
@@ -78,9 +86,9 @@ class LoaderMake {
         path,
         ext
       }) => {
-        if (this.path == "controller.config") {
+        /* if (this.path == "controller.config") {
           return this.renderConfig(path)
-        }
+        } */
         if (new RegExp("css|less|scss|sass").test(ext)) {
           return this.renderCss(path);
         }
@@ -93,18 +101,30 @@ class LoaderMake {
     return [`var renderAll = render(handlers, true)`];
   }
   getEnd() {
-    return [`typeof psdefine === "function" && psdefine(function(){
+    return [
+      `typeof psdefine === "function" && psdefine(function(){
       return renderAll 
-    })`]
+    })`
+    ];
   }
   renderTxt(path) {
-    return `handlers.push(require(${genRequest.call( this, [ path ], null, false )}).default)`;
+    return `handlers.push(require(${genRequest.call(
+      this,
+      [path],
+      null,
+      false
+    )}).default)`;
   }
   renderConfig(path) {
-    return `handlers.push(require(${genRequest.call( this, [ pathLib.resolve(filepath, './ctrl-template-extractor.js'), path ], query, true )}).default)`;
+    return `handlers.push(require(${genRequest.call(
+      this,
+      [pathLib.resolve(workPath, "./ctrl-template-extractor.js")],
+      query,
+      true
+    )}).default)`;
   }
   renderCss(path) {
-    return `require(${genRequest.call( this, [ path ], null, false )})`;
+    return `require(${genRequest.call(this, [path], null, false)})`;
   }
 }
 module.exports = d => d;

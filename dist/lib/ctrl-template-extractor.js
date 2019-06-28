@@ -33,7 +33,7 @@ class MakeDeps {
     this.fileState = getFileStateInstance();
     this.deps = new Set;
   }
-  getDeps() {
+  getDeps(source) {
     let configBlock = selectBlock(source, "config"),
       config = configBlock.attributes,
       deps = config.deps.filter(d => {
@@ -49,8 +49,8 @@ class MakeDeps {
     let depsMap = this.deps,
       gen = loadFile(this.getDeps(this.source)),
       readFile = depsName => {
-        let depName = splitName(depsName);
-        fd = this.fileState.findFile(depName);
+        let depName = splitName(depsName),
+          fd = this.fileState.findFile(depName);
         if (fd) {
           fd.read().then(d => {
             gen.next(this.getDeps(d));

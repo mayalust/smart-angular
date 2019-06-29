@@ -19,6 +19,11 @@ class FileStates {
   clear() {
     this.filesMap = new Map();
   }
+  findFile(factory, path, file) {
+    let id = pathLib.resolve(workPath, `./${factory}/${path}/${file}.${path}`),
+      data = this.filesMap.get(id);
+    return this.filesMap.get(data);
+  }
   setGroup(files) {
     files.forEach(file => {
       this.set(file.path, file);

@@ -6,12 +6,16 @@ function toUpper(str) {
 }
 class MakeConfig {
   constructor(factory, path, file) {
-    const Normal = ["output", "controller.config", "controllers", "services", "directives", "styles"],
+    const Old = ["controller", "service", "directive", "style"],
+      Normal = ["output", "controller.config", "controllers", "services", "directives", "styles"],
       All = ["allControllers", "allServices", "allDirectives"];
     this.factory = factory;
     if (path == null || path == "*") {
       this.path = Normal.concat(All);
       return;
+    }
+    if (Old.indexOf(path) != -1) {
+      path += "s";
     }
     if (Normal.indexOf(path) == -1) {
       throw new Error(`unknown path input [${path}], please select from [${Normal.join(",")}]`);
@@ -19,7 +23,7 @@ class MakeConfig {
     if (All.indexOf(path) != -1) {
       throw new Error(`please use for instance "controllers/* instead."`);
     }
-    this.path = file == "*" ? [`all${toUpper(path)}`] : [path];
+    this.path = file != null ? [`all${toUpper(path)}`] : [path];
     this.file = file;
   }
 }

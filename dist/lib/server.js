@@ -1,8 +1,126 @@
-const packer = require("./packer.js"),
+const Packer = require("./packer.js"),
   createModuleMap = require("./moduleMap.js");
+class Explainer {
+  constructor() {
+    this.fnList = new Map();
+    this.packer = new Packer();
+    this.moduleMap = createModuleMap();
+    this.add(`\\/build\\/controller\\.config\\.js$`, (match, callback) => {
+      this.moduleMap
+        .init(this.factory, "controller.config")
+        .then(moduleList => {
+          this.packer.pack(moduleList, asset => {
+            callback && callback.call(this, asset[0]["js"]);
+          });
+        });
+    });
+    this.add(`\\/build\\/output\\.(js|css)$`, (match, callback) => {
+      this.moduleMap.init(this.factory, "output").then(moduleList => {
+        this.packer.pack(moduleList, asset => {
+          callback && callback.call(this, asset[0][match[1]]);
+        });
+      });
+    });
+    this.add(`\\/build\\/controller\\.(js|css)$`, (match, callback) => {
+      this.moduleMap.init(this.factory, "controller").then(moduleList => {
+        this.packer.pack(moduleList, asset => {
+          callback && callback.call(this, asset[0][match[1]]);
+        });
+      });
+    });
+    this.add(
+      `\\/build\\/controller\\/([^.]+)\\.(js|css)$`,
+      (match, callback) => {
+        this.moduleMap
+          .init(this.factory, "controller", match[1])
+          .then(moduleList => {
+            this.packer.pack(moduleList, asset => {
+              callback && callback.call(this, asset[0][match[2]]);
+            });
+          });
+      }
+    );
+    this.add(`\\/build\\/service\\.js$`, (match, callback) => {
+      this.moduleMap.init(this.factory, "service").then(moduleList => {
+        this.packer.pack(moduleList, asset => {
+          callback && callback.call(this, asset[0]["js"]);
+        });
+      });
+    });
+    this.add(`\\/build\\/service\\/([^.]+)\\.(js|css)$`, (match, callback) => {
+      this.moduleMap
+        .init(this.factory, "service", match[1])
+        .then(moduleList => {
+          this.packer.pack(moduleList, asset => {
+            callback && callback.call(this, asset[0][match[2]]);
+          });
+        });
+    });
+    this.add(`\\/build\\/directive\\.(js|css)$`, (match, callback) => {
+      this.moduleMap.init(this.factory, "directive").then(moduleList => {
+        this.packer.pack(moduleList, asset => {
+          callback && callback.call(this, asset[0][match[1]]);
+        });
+      });
+    });
+    this.add(
+      `\\/build\\/directive\\/([^.]+)\\.(js|css)$`,
+      (match, callback) => {
+        this.moduleMap
+          .init(this.factory, "directive", match[1])
+          .then(moduleList => {
+            this.packer.pack(moduleList, asset => {
+              callback && callback.call(this, asset[0][match[2]]);
+            });
+          });
+      }
+    );
+    this.add(`\\/build\\/style\\.css$`, (match, callback) => {
+      this.moduleMap.init(this.factory, "style").then(moduleList => {
+        this.packer.pack(moduleList, asset => {
+          callback && callback.call(this, asset[0]["css"]);
+        });
+      });
+    });
+  }
+  setFactory(factory) {
+    this.factory = factory;
+  }
+  add(exp, fn) {
+    this.fnList.set(exp, fn);
+  }
+  check(url, callback) {
+    let gen = this.fnList.entries(),
+      factory = this.factory;
+
+    function checkList() {
+      let {
+        done,
+        value
+      } = gen.next();
+      if (!done) {
+        let key = value[0],
+          fn = value[1],
+          match = new RegExp(factory + key).exec(url);
+        if (match) {
+          fn(match, d => {
+            callback(d);
+          });
+        } else {
+          checkList();
+        }
+      } else {
+        callback();
+      }
+    }
+    checkList();
+  }
+}
+
 class Server {
   constructor(config) {
-    this.prefix = config.prefix;
+    this.prefix = config ? config.prefix : "ps";
+    this.explainer = new Explainer();
     this.moduleMap = createModuleMap();
   }
   getFactory(factory) {
@@ -12,46 +130,24 @@ class Server {
     }
     return name.join("-");
   }
+  renderFile(url, callback) {
+    this.explainer.check(url, callback);
+  }
   start(app, factory) {
-    factory = getFactory(factory);
-    app.get(`${factory}/build/controller.config.js`, (req, res) => {
-      this.moduleMap.init(factory, "controller.config").then(moduleList => {
-        this.packer.pack(moduleList, nodes => {});
+    factory = this.getFactory(factory);
+    this.explainer.setFactory(factory);
+    app &&
+      app.use((req, res, next) => {
+        let url = getUrl(req.url),
+          fd = this.renderFile(url, content => {
+            if (!content) {
+              return next();
+            }
+          });
+        if (!fd) {
+          return next();
+        }
       });
-    });
-    app.get(`${factory}/build/service.js`, (req, res) => {
-      this.moduleMap.init(factory, "services").then(moduleList => {
-        this.packer.pack(moduleList, nodes => {});
-      });
-    });
-    app.get(`${factory}/build/directive.js`, (req, res) => {
-      this.moduleMap.init(factory, "directives").then(moduleList => {
-        this.packer.pack(moduleList, nodes => {});
-      });
-    });
-    app.get(`${factory}/build/output.js`, (req, res) => {
-      this.moduleMap.init(factory, "output").then(moduleList => {
-        this.packer.pack(moduleList, nodes => {});
-      });
-    });
-    app.get(`${factory}/build/controllers/:controller`, (req, res) => {
-      let file = "controller"
-      this.moduleMap.init(factory, "controllers", file).then(moduleList => {
-        this.packer.pack(moduleList, nodes => {});
-      });
-    });
-    app.get(`${factory}/build/services/:service`, (req, res) => {
-      let file = "service"
-      this.moduleMap.init(factory, "services", file).then(moduleList => {
-        this.packer.pack(moduleList, nodes => {});
-      });
-    });
-    app.get(`${factory}/build/directives/:directive`, (req, res) => {
-      let file = "directive"
-      this.moduleMap.init(factory, "directives", file).then(moduleList => {
-        this.packer.pack(moduleList, nodes => {});
-      });
-    });
   }
 }
-module.exports = Server
+module.exports = Server;

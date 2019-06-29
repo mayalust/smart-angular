@@ -1,5 +1,7 @@
 const _filePath = process.cwd(),
+  dir = process.cwd(),
   workPath = getWorkPath(__filename),
+  getAssetInstance = require("./asset.js"),
   pathLib = require("path"),
   psFile = require("ps-file"),
   MiniCssExtractPlugin = require("mini-css-extract-plugin"),
@@ -11,6 +13,42 @@ const _filePath = process.cwd(),
   } = require("querystring"),
   PathMaker = require("./path-maker.js"),
   getFileStateInstance = require("./file-state.js");
+
+function toObject(arr, fn) {
+  let rs = {};
+  for (let i = 0; i < arr.length; i++) {
+    let obj = fn(arr[i], i);
+    rs[obj[0]] = obj[1];
+  }
+  return rs;
+}
+
+function recursiveIssuer(m) {
+  if (m.issuer) {
+    return recursiveIssuer(m.issuer);
+  } else if (m.name) {
+    return m.name;
+  } else {
+    return false;
+  }
+}
+
+function basedOnEntry({
+  basename
+}) {
+  return [
+    basename + "Styles", {
+      name: basename,
+      test: (m, c, entry) => {
+        entry = entry || basename;
+        let rs = m.constructor.name === 'CssModule' && recursiveIssuer(m) === entry;
+        return rs;
+      },
+      chunks: 'all',
+      enforce: true,
+    }
+  ]
+}
 
 function getWorkPath(path) {
   let match = new RegExp("(.*)(?:\\\\|\\/)[^\\/]+$").exec(path);
@@ -163,6 +201,7 @@ class Output {
     }
     this.path = pathLib.resolve(_filePath, factory, filePath);
     this.filename = fileName;
+    this.publicPath = '/';
   }
 }
 class Module {
@@ -175,7 +214,15 @@ class Module {
     this.factory = factory;
     this.path = path;
     this.file = file;
+    this.assets = getAssetInstance();
     this.fileState = getFileStateInstance();
+  }
+  makeOptimizationByDeps() {
+    return {
+      splitChunks: {
+        cacheGroups: toObject(this.deps, basedOnEntry)
+      }
+    }
   }
   init() {
     let {
@@ -223,18 +270,20 @@ class Module {
         let files = await loadFiles(factory, ["controllers"]);
         this.entry = () => {
           return this.deps.reduce((a, b) => {
-            if (this.fileState.isModified(b.path)) {
-              a[b.basename] = makeEntry({
-                factory: factory,
-                path: "controllers",
-                file: b.basename
-              });
-            }
+            a[b.basename] = makeEntry({
+              factory: factory,
+              path: "controllers",
+              file: b.basename,
+              smartangular: null
+            });
             return a;
           }, {});
         };
         this.output = new Output(factory, "./build/controller", `[name].js`);
         this.modules = new WebpackModule();
+        this.optimization = () => {
+          return this.makeOptimizationByDeps();
+        };
         this.plugins = [
           new angularLoaderPlugin(),
           new MiniCssExtractPlugin({
@@ -251,7 +300,7 @@ class Module {
             path: "controllers",
             smartangular: null
           });
-          this.output = new Output(factory, "controllers.js");
+          this.output = new Output(factory, "controller.js");
           this.plugins = [
             new angularLoaderPlugin(), new MiniCssExtractPlugin({
               filename: `controller.css`,
@@ -283,19 +332,20 @@ class Module {
         let files = await loadFiles(factory, ["services"]);
         this.entry = () => {
           return this.deps.reduce((a, b) => {
-            if (this.fileState.isModified(b.path)) {
-              a[b.basename] = makeEntry({
-                factory: factory,
-                path: "services",
-                file: b.basename,
-                smartangular: null
-              });
-            }
+            a[b.basename] = makeEntry({
+              factory: factory,
+              path: "services",
+              file: b.basename,
+              smartangular: null
+            });
             return a;
           }, {});
         };
         this.output = new Output(factory, "./build/service", `[name].js`);
         this.modules = new WebpackModule();
+        /* this.optimization = () => {
+          return this.makeOptimizationByDeps();
+        }; */
         this.plugins = [
           new angularLoaderPlugin(),
           new MiniCssExtractPlugin({
@@ -312,7 +362,7 @@ class Module {
             path: "services",
             smartangular: null
           });
-          this.output = new Output(factory, "services.js");
+          this.output = new Output(factory, "service.js");
         } else {
           this.entry = makeEntry({
             factory: factory,
@@ -334,19 +384,20 @@ class Module {
         let files = await loadFiles(factory, ["directives"]);
         this.entry = () => {
           return this.deps.reduce((a, b) => {
-            if (this.fileState.isModified(b.path)) {
-              a[b.basename] = makeEntry({
-                factory: factory,
-                path: "directives",
-                file: b.basename,
-                smartangular: null
-              });
-            }
+            a[b.basename] = makeEntry({
+              factory: factory,
+              path: "directives",
+              file: b.basename,
+              smartangular: null
+            });
             return a;
           }, {});
         };
         this.output = new Output(factory, "./build/directive", `[name].js`);
         this.modules = new WebpackModule();
+        this.optimization = () => {
+          return this.makeOptimizationByDeps();
+        };
         this.plugins = [
           new angularLoaderPlugin(),
           new MiniCssExtractPlugin({
@@ -363,7 +414,7 @@ class Module {
             path: "directives",
             smartangular: null
           });
-          this.output = new Output(factory, "directives.js");
+          this.output = new Output(factory, "directive.js");
         } else {
           this.entry = makeEntry({
             factory: factory,
@@ -391,7 +442,7 @@ class Module {
           path: "styles",
           smartangular: null
         });
-        this.output = new Output(factory, "style.css");
+        this.output = new Output(factory, "style.js");
         this.modules = new WebpackModule();
         this.plugins = [
           new angularLoaderPlugin(),
@@ -430,6 +481,42 @@ class Module {
       //console.log(c);
     }
     return rs;
+  }
+  getUpdatedAsset(callback) {
+    this.getAsset(callback, true)
+  }
+  getAsset(callback, needUpdatedFile) {
+    let id = `${this.factory}/${this.path}/${this.file ? this.file : ""}`,
+      asset = {};
+    if (this.assets.get(id) != null && needUpdatedFile != true) {
+      return callback(this.assets.get(id));
+    }
+    let arr = [this.factory, "build"];
+    if (this.path != null) {
+      if (["controllers", "directives", "services", "styles"].indexOf(this.path) != -1) {
+        arr.push(this.path.substring(0, this.path.length - 1));
+      } else if (["allControllers", "allDirectives", "allServices"].indexOf(this.path) != -1) {
+        arr.push(this.path.substring(3, this.path.length - 1).toLowerCase());
+      } else {
+        arr.push(this.path);
+      }
+    }
+    if (this.file != null) {
+      arr.push(this.file);
+    }
+    let jsId = pathLib.resolve(dir, "./" + arr.join("/") + ".js"),
+      cssId = pathLib.resolve(dir, "./" + arr.join("/") + ".css");
+    psFile(jsId).read().then(d => {
+      asset.js = d.toString();
+      return psFile(cssId).read();
+    }).then(d => {
+      asset.css = d.toString();
+      this.assets.add(id, asset);
+      callback(asset);
+    }).catch(e => {
+      this.assets.add(id, asset);
+      callback(asset);
+    })
   }
 }
 module.exports = Module;

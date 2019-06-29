@@ -86,9 +86,9 @@ class LoaderMake {
         path,
         ext
       }) => {
-        /* if (this.path == "controller.config") {
+        if (this.path == "controller.config") {
           return this.renderConfig(path)
-        } */
+        }
         if (new RegExp("css|less|scss|sass").test(ext)) {
           return this.renderCss(path);
         }
@@ -118,8 +118,12 @@ class LoaderMake {
   renderConfig(path) {
     return `handlers.push(require(${genRequest.call(
       this,
-      [pathLib.resolve(workPath, "./ctrl-template-extractor.js")],
-      query,
+      [pathLib.resolve(workPath, "./ctrl-template-extractor.js"),path],
+      {
+        factory : this.factory,
+        path : this.path,
+        file : this.file
+      },
       true
     )}).default)`;
   }

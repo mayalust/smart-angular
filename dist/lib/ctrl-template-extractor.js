@@ -1,20 +1,22 @@
-const {
-  getFileName,
-  unCamelhill
-} = require("ps-ultility"),
+const { getFileName, unCamelhill } = require("ps-ultility"),
+  { parse } = require("querystring"),
+  { selectBlock } = require("ps-angular-loader/lib/select"),
   getFileStateInstance = require("./file-state.js"),
-  log = require('proudsmart-log')(true), dics = {
+  log = require("proudsmart-log")(true),
+  pathLib = require("path"),
+  dics = {
     dir: "directive",
     ser: "service"
   },
+  psfile = require("ps-file"),
   extsDics = {
     directive: "js|css",
     service: "js"
-  }
+  };
 
 function makeParam(str) {
   let arr = str.split("/").filter(d => d);
-  return arr.length > 0 ? `/${ arr.join("/") }` : "";
+  return arr.length > 0 ? `/${arr.join("/")}` : "";
 }
 
 function splitName(str) {
@@ -25,71 +27,102 @@ function splitName(str) {
     name = a[0],
     type = dics[a[1]] || a[1] || "directive",
     ext = extsDics[type];
-  return `${type}/${unCamelhill( name )}.${ext}`
+  return {
+    path: type,
+    file: unCamelhill(name),
+    ext: ext
+  };
 }
 class MakeDeps {
-  constructor(source) {
+  constructor(factory, source) {
+    this.factory = factory;
     this.source = source;
     this.fileState = getFileStateInstance();
-    this.deps = new Set;
+    this.deps = new Set();
+    this.loadFiles = psfile(pathLib.resolve(this.factory)).children(node => {
+      return node.ext === "directive" || node.ext === "service";
+    });
   }
   getDeps(source) {
     let configBlock = selectBlock(source, "config"),
-      config = configBlock.attributes,
-      deps = config.deps.filter(d => {
-        if (this.deps.has(d)) {
-          return;
-        }
-        this.deps.add(d);
-        return true;
-      });
+      config = configBlock && configBlock.attributes,
+      deps =
+        config &&
+        config.deps &&
+        config.deps.split(",").filter(d => {
+          if (this.deps.has(d)) {
+            return;
+          }
+          return true;
+        });
     return deps;
   }
   init(callback) {
-    let depsMap = this.deps,
-      gen = loadFile(this.getDeps(this.source)),
-      readFile = depsName => {
-        let depName = splitName(depsName),
-          fd = this.fileState.findFile(depName);
-        if (fd) {
+    this.loadFiles.then(files => {
+      let depsMap = this.deps,
+        gen = loadFile(this.getDeps(this.source)),
+        readFile = depsName => {
+          let { path, file } = splitName(depsName),
+            fd = files.find(f => {
+              return f.path.indexOf(`${path}s/${file}`) != -1;
+            });
+          if (depsMap.has(`/${this.factory}/${path}s/${file}.${path}`)) {
+            console.error(`${depsName} is duplicated, should be negelect!`);
+            setTimeout(() => {
+              gen.next();
+            });
+            return;
+          }
+          if (!fd) {
+            console.error(`${depsName} is not found!`);
+            setTimeout(() => {
+              gen.next();
+            });
+            return;
+          }
+          depsMap.add(`/${this.factory}/${path}s/${file}.${path}`);
           fd.read().then(d => {
+            d = d.toString();
             gen.next(this.getDeps(d));
-          })
-        } else {
-          console.error(`${depName} is not found`);
-          gen.next();
-        }
-      }
+          });
+        };
+      gen.next();
 
-    function* loadFile(queue) {
-      let item;
-      while (item = queue.shift()) {
-        [].push.apply(queue, yield readFile(item))
+      function* loadFile(queue) {
+        if (queue == null) {
+          callback([]);
+          return;
+        }
+        let item;
+        while ((item = queue.shift())) {
+          [].push.apply(queue, yield readFile(item));
+        }
+        callback(Array.from(depsMap));
+        return;
       }
-      callback(Array.from(depsMap));
-    }
+    });
   }
 }
 
 function getConfig(source) {
-  let {
-    resourceQuery
-  } = this, callback = this.async(),
-    query = parse(resourceQuery.slice(1)), {
-      pack
-    } = query,
+  let { resourceQuery } = this,
+    callback = this.async(),
+    query = parse(resourceQuery.slice(1)),
     name = getFileName(this.resourcePath),
+    configBlock = selectBlock(source, "config"),
+    config = configBlock.attributes,
     param = makeParam(config.params || config.param || ""),
-    makeDeps = new MakeDeps(source);
+    makeDeps = new MakeDeps(query.factory, source);
   makeDeps.init(d => {
-    callback(null, `export default function(){
+    let obj = `export default function(){
       return {
         type : "router",
-        loaderpath : ["${d.join("\",\"")}"],
-        router : "/${ name }${ param }",
-        ctrlname : "${ name }"
+        loaderpath : ${d.length > 0 ? `["${d.join('","')}"]` : "[]"},
+        router : "/${name}${param}",
+        ctrlname : "${name}"
       }
-    }`)
-  })
+    }`;
+    callback(null, obj);
+  });
 }
 module.exports = getConfig;

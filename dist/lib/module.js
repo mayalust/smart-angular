@@ -69,6 +69,9 @@ function loadFiles(factory, arr) {
     directives(ext) {
       return ext == "directive";
     },
+    template(ext) {
+      return ext == "template";
+    },
     styles(ext) {
       return new RegExp("css|less|scss|sass").test(ext);
     }
@@ -141,7 +144,7 @@ class WebpackModule {
         }
       },
       {
-        test: /\.angular/,
+        test: /\.angular$/,
         use: ["ps-angular-loader"]
       },
       {
@@ -265,6 +268,19 @@ class Module {
           new angularLoaderPlugin()
         ];
         return await loadFiles(factory, ["controllers"]);
+      },
+      async template() {
+        this.entry = makeEntry({
+          factory: factory,
+          path: "template",
+          smartangular: null
+        });
+        this.output = new Output(factory, "template.js");
+        this.modules = new WebpackModule();
+        this.plugins = [
+          new angularLoaderPlugin()
+        ];
+        return await loadFiles(factory, ["template"]);
       },
       async allControllers() {
         let files = await loadFiles(factory, ["controllers"]);
@@ -489,6 +505,7 @@ class Module {
     let id = `${this.factory}/${this.path}/${this.file ? this.file : ""}`,
       asset = {};
     if (this.assets.get(id) != null && needUpdatedFile != true) {
+      console.info(`从缓存获取:${id}`);
       return callback(this.assets.get(id));
     }
     let arr = [this.factory, "build"];
@@ -512,9 +529,11 @@ class Module {
     }).then(d => {
       asset.css = d.toString();
       this.assets.add(id, asset);
+      console.info(`从文件获取:${id}`);
       callback(asset);
     }).catch(e => {
       this.assets.add(id, asset);
+      console.info(`从文件获取:${id}`);
       callback(asset);
     })
   }

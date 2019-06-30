@@ -89,6 +89,9 @@ class LoaderMake {
         if (this.path == "controller.config") {
           return this.renderConfig(path)
         }
+        if (this.path == "template") {
+          return this.renderTemplate(path)
+        }
         if (new RegExp("css|less|scss|sass").test(ext)) {
           return this.renderCss(path);
         }
@@ -106,6 +109,9 @@ class LoaderMake {
       return renderAll 
     })`
     ];
+  }
+  renderTemplate(path) {
+    return `handlers.push(require(${genRequest.call( this, [ pathLib.resolve(workPath, './template-extractor.js'), path ], null, true)}).default)`;
   }
   renderTxt(path) {
     return `handlers.push(require(${genRequest.call(

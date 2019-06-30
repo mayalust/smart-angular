@@ -14,14 +14,22 @@ class smartAngular {
     let config = {
       "prefix": "ps"
     }
-    this.server = new Server(config);
+    this.ser = new Server(config);
     this.command = new Command(config);
+  }
+  server(app, factory) {
+    this.ser.start(app, factory);
   }
   pack(str) {
     this.command.pack(str);
   }
-  start(app, factory) {
-    this.server.start(factory);
-  }
 }
-module.exports = new smartAngular;
+let sangular = new smartAngular;
+module.exports = {
+  server(app, factory) {
+    sangular.server(app, factory);
+  },
+  pack(str) {
+    sangular.pack(str);
+  }
+};

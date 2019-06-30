@@ -53,13 +53,10 @@ class State {
 }
 Object.defineProperty(State.prototype, "isModified", {
   get() {
-    if (
-      this.modifyTime
-    ) {
+    if (this.modifyTime) {
       return this.oldModifyTime != this.modifyTime;
-    } else {
-      return false;
     }
+    return false;
   }
 });
 

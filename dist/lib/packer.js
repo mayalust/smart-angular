@@ -12,6 +12,8 @@ function runItem(obj) {
 }
 class PackQueue {
   constructor(queue, callback) {
+    this.mode = "development";
+    this.devtool = "source-map";
     this.queue = queue;
     this.index = 1;
     this.callback = callback;
@@ -87,8 +89,6 @@ class PackQueue {
 }
 class Packer {
   constructor(mode, sourcemap) {
-    this.mode = mode || "development";
-    this.devtool = sourcemap || "source-map";
     this.generator = null;
     this.packupQueue = null;
   }

@@ -83,7 +83,7 @@ const render = function (handlers, inConfig) {
                 loader: ["$q", "$registerService", function (q, registerService) {
                   let defer = q.defer(),
                     time = new Date();
-                  if (!loaderpath) {
+                  if (loaderpath == null || loaderpath.length == 0) {
                     defer.resolve("success");
                     return defer.promise;
                   }

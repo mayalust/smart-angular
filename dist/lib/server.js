@@ -14,6 +14,15 @@ class Explainer {
           });
         });
     }); */
+    this.add(`\\/build\\/controller\\.template\\.js$`, (match, callback) => {
+      this.moduleMap
+        .init(this.factory, "template")
+        .then(moduleList => {
+          this.packer.pack(moduleList, asset => {
+            callback && callback.call(this, ["js", asset[0]["js"]]);
+          });
+        });
+    });
     this.add(`\\/build\\/template\\.controller\\.js$`, (match, callback) => {
       this.moduleMap
         .init(this.factory, "template")

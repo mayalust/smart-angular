@@ -1,11 +1,6 @@
-const {
-  getFileName,
-  unCamelhill
-} = require("ps-ultility"), {
-    parse
-  } = require("querystring"), {
-    selectBlock
-  } = require("ps-angular-loader/lib/select"),
+const { getFileName, unCamelhill } = require("ps-ultility"),
+  { parse } = require("querystring"),
+  { selectBlock } = require("ps-angular-loader/lib/select"),
   getFileStateInstance = require("./file-state.js"),
   loadFiles = loadFilesIns(),
   log = require("proudsmart-log")(true),
@@ -42,12 +37,14 @@ function splitName(str) {
 
 function loadFilesIns() {
   let files = {};
-  return function (factory) {
-    files[factory] = files[factory] || psfile(pathLib.resolve(factory)).children(node => {
-      return node.ext === "directive" || node.ext === "service";
-    })
+  return function(factory) {
+    files[factory] =
+      files[factory] ||
+      psfile(pathLib.resolve(factory)).children(node => {
+        return node.ext === "directive" || node.ext === "service";
+      });
     return files[factory];
-  }
+  };
 }
 class MakeDeps {
   constructor(factory, source) {
@@ -61,27 +58,24 @@ class MakeDeps {
     let configBlock = selectBlock(source, "config"),
       config = configBlock && configBlock.attributes,
       deps =
-      config &&
-      config.deps &&
-      config.deps.split(",").filter(d => {
-        if (this.deps.has(d)) {
-          return;
-        }
-        return true;
-      });
-    return deps;
+        config &&
+        config.deps &&
+        config.deps.split(",").filter(d => {
+          if (this.deps.has(d)) {
+            return;
+          }
+          return true;
+        });
+    return typeof deps == "object" ? deps : null;
   }
   init(callback) {
     this.loadFiles.then(files => {
       let depsMap = this.deps,
         gen = loadFile(this.getDeps(this.source)),
         readFile = depsName => {
-          let {
-            path,
-            file
-          } = splitName(depsName),
+          let { path, file } = splitName(depsName),
             fd = files.find(f => {
-              return f.path.indexOf(`${path}s/${file}`) != -1;
+              return f.path.indexOf(`${file}.${path}`) != -1;
             });
           if (depsMap.has(`/${this.factory}/${path}s/${file}.${path}`)) {
             console.error(`${depsName} is duplicated, should be negelect!`);
@@ -122,10 +116,8 @@ class MakeDeps {
 }
 
 function getConfig(source) {
-  let {
-    resourceQuery
-  } = this,
-  callback = this.async(),
+  let { resourceQuery } = this,
+    callback = this.async(),
     query = parse(resourceQuery.slice(1)),
     name = getFileName(this.resourcePath),
     configBlock = selectBlock(source, "config"),

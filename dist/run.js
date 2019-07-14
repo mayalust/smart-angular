@@ -2,7 +2,7 @@
 
 const {
   pack
-} = require(`./lib/index`),
+} = require(`./index`),
   initHandler = require(`./lib/init`), {
     init,
     controller,

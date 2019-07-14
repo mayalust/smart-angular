@@ -1,5 +1,6 @@
 const _filePath = process.cwd(),
   dir = process.cwd(),
+  forceCompile = require("./force-compile"),
   workPath = getWorkPath(__filename),
   getAssetInstance = require("./asset.js"),
   pathLib = require("path"),
@@ -69,7 +70,7 @@ function loadFiles(factory, arr) {
     directives(ext) {
       return ext == "directive";
     },
-    template(ext) {
+    templates(ext) {
       return ext == "template";
     },
     styles(ext) {
@@ -217,6 +218,7 @@ class Module {
     this.factory = factory;
     this.path = path;
     this.file = file;
+    this.forceCompile = forceCompile();
     this.assets = getAssetInstance();
     this.fileState = getFileStateInstance();
   }
@@ -280,7 +282,7 @@ class Module {
         this.plugins = [
           new angularLoaderPlugin()
         ];
-        return await loadFiles(factory, ["template"]);
+        return await loadFiles(factory, ["templates"]);
       },
       async allControllers() {
         let files = await loadFiles(factory, ["controllers"]);
@@ -484,28 +486,37 @@ class Module {
     });
   }
   isModified() {
-    if (this.deps.length == 1) {
+    if (this.forceCompile.value()) {
+      return true;
+    }
+    /* if (this.deps.length == 1) {
       let a = this.fileState.isModified([this.deps[0].path]);
       if (a) {
         let b = this.fileState.get(this.deps[0].path);
         //console.log(b);
       }
-    }
+    } */
     let rs = this.fileState.isModified(this.deps.map(dep => dep.path));
-    if (this.deps.length > 4) {
+    /* if (this.deps.length > 4) {
       let c = this.fileState.get(this.deps[4].path);
-      //console.log(c);
-    }
+    } */
     return rs;
+  }
+  getId() {
+    return [this.factory, this.path, this.file].filter(d => d).join("/");
   }
   getUpdatedAsset(callback) {
     this.getAsset(callback, true)
   }
-  getAsset(callback, needUpdatedFile) {
-    let id = `${this.factory}/${this.path}/${this.file ? this.file : ""}`,
+  getAsset(callback) {
+    let id = this.getId(),
       asset = {};
-    if (this.assets.get(id) != null && needUpdatedFile != true) {
-      console.info(`从缓存获取:${id}`);
+    if (this.forceCompile.value() == true) {
+      console.info(`-------- [成功(模块)] 命令行输入:${id}，不需要返回值`);
+      return callback();
+    }
+    if (this.assets.get(id) != null) {
+      console.info(`-------- [成功(模块)] 从缓存获取:${id}`);
       return callback(this.assets.get(id));
     }
     let arr = [this.factory, "build"];
@@ -529,11 +540,12 @@ class Module {
     }).then(d => {
       asset.css = d.toString();
       this.assets.add(id, asset);
-      console.info(`从文件获取:${id}`);
+      console.info(`-------- [成功(模块)] 文件缓存中找不到对应资源,从文件[${id}]读取信息`);
+
       callback(asset);
     }).catch(e => {
       this.assets.add(id, asset);
-      console.info(`从文件获取:${id}`);
+      console.info(`-------- [错误(模块)] 找不到对应文件，或文件加载错误,跳过从[${id}]读取信息`);
       callback(asset);
     })
   }

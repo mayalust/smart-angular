@@ -1,9 +1,11 @@
 const Packer = require("./packer.js"),
+  forceCompile = require("./force-compile"),
   createModuleMap = require("./moduleMap.js");
 class Command {
   constructor(config = {}) {
     this.prefix = config.prefix || "ps";
     this.packer = new Packer();
+    this.forceCompile = forceCompile();
   }
   getFactory(factory) {
     let name = [factory];
@@ -31,7 +33,8 @@ class Command {
     } = this.getFactoryQuery(str),
       moduleMap = createModuleMap();
     moduleMap.reset();
-    moduleMap.init(factory, path, file).then(moduleList => {
+    moduleMap.init(factory, path, file, true).then(moduleList => {
+      this.forceCompile.turnOn();
       this.packer.pack(moduleList, nodes => {
         callback && callback.call(this, nodes);
       });

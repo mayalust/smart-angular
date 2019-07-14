@@ -111,7 +111,7 @@ class LoaderMake {
     ];
   }
   renderTemplate(path) {
-    return `handlers.push(require(${genRequest.call( this, [ pathLib.resolve(workPath, './template-extractor.js'), path ], null, true)}).default)`;
+    return `require(${genRequest.call( this, [ pathLib.resolve(workPath, './template-extractor.js'), path ], null, true)})`;
   }
   renderTxt(path) {
     return `handlers.push(require(${genRequest.call(

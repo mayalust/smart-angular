@@ -14,7 +14,7 @@ class Explainer {
           });
         });
     }); */
-    this.add(`\\/build\\/controller\\.template\\.js$`, (match, callback) => {
+    this.add(`\\/build\\/config\\.template\\.js$`, (match, callback) => {
       this.moduleMap
         .init(this.factory, "template")
         .then(moduleList => {
@@ -23,7 +23,7 @@ class Explainer {
           });
         });
     });
-    this.add(`\\/build\\/template\\.controller\\.js$`, (match, callback) => {
+    this.add(`\\/build\\/template\\.config\\.js$`, (match, callback) => {
       this.moduleMap
         .init(this.factory, "template")
         .then(moduleList => {

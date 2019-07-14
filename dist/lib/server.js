@@ -5,7 +5,7 @@ class Explainer {
     this.fnList = new Map();
     this.packer = new Packer();
     this.moduleMap = createModuleMap();
-    this.add(`\\/build\\/controller\\.config\\.js$`, (match, callback) => {
+    /* this.add(`\\/build\\/controller\\.config\\.js$`, (match, callback) => {
       this.moduleMap
         .init(this.factory, "controller.config")
         .then(moduleList => {
@@ -13,8 +13,8 @@ class Explainer {
             callback && callback.call(this, ["js", asset[0]["js"]]);
           });
         });
-    });
-    this.add(`\\/build\\/template\\.js$`, (match, callback) => {
+    }); */
+    this.add(`\\/build\\/template\\.controller\\.js$`, (match, callback) => {
       this.moduleMap
         .init(this.factory, "template")
         .then(moduleList => {

@@ -85,7 +85,7 @@ class MakeDeps {
             fd = files.find(f => {
               return f.path.indexOf(`${file}.${path}`) != -1;
             });
-          if (depsMap.has("./" + this.factory + "/" + fd.path.split(this.factory + "/")[1])) {
+          if (depsMap.has(`./${this.factory}/build/${path}/${file}.js|css`)) {
             console.error(`${depsName} is duplicated, should be negelect!`);
             setTimeout(() => {
               gen.next();
@@ -99,7 +99,7 @@ class MakeDeps {
             });
             return;
           }
-          depsMap.add("./" + this.factory + "/" + fd.path.split(this.factory + "/")[1]);
+          depsMap.add(`./${this.factory}/build/${path}/${file}.js|css`);
           //depsMap.add("./" + this.factory + "/" + fd.path.split(this.factory + "/")[1]);
           fd.read().then(d => {
             d = d.toString();

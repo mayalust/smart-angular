@@ -6,10 +6,15 @@ function toUpper(str) {
 }
 class MakeConfig {
   constructor(factory, path, file) {
-    const Old = ["controller", "service", "directive", "style"],
+    const OldDics = {
+        "config.controller": "controller.config",
+        "config.template": "template.config"
+      },
+      Old = ["controller", "service", "directive", "style"],
       Normal = ["output", "controller.config", "controllers", "services", "directives", "styles", "template"],
       All = ["allControllers", "allServices", "allDirectives"];
     this.factory = factory;
+    path = OldDics[path] || path;
     if (path == null || path == "*") {
       this.path = Normal.concat(All);
       return;

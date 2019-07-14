@@ -504,7 +504,7 @@ class Module {
       console.info(`-------- [成功(模块)] 命令行输入:${id}，不需要返回值`);
       return callback();
     }
-    if (this.assets.get(id) != null) {
+    if (this.isModified() && this.assets.get(id) != null) {
       console.info(`-------- [成功(模块)] 从缓存获取:${id}`);
       return callback(this.assets.get(id));
     }

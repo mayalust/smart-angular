@@ -30,13 +30,13 @@ class Explainer {
         });
       });
     });
-    this.add(`\\/build\\/controller\\.(js|css)$`, (match, callback) => {
-      this.moduleMap.init(this.factory, "controller").then(moduleList => {
-        this.packer.pack(moduleList, asset => {
-          callback && callback.call(this, [match[1], asset[0][match[1]]]);
-        });
-      });
-    });
+    /*  this.add(`\\/build\\/controller\\.(js|css)$`, (match, callback) => {
+       this.moduleMap.init(this.factory, "controller").then(moduleList => {
+         this.packer.pack(moduleList, asset => {
+           callback && callback.call(this, [match[1], asset[0][match[1]]]);
+         });
+       });
+     }); */
     this.add(
       `\\/build\\/controller\\/([^.]+)\\.(js|css)$`,
       (match, callback) => {

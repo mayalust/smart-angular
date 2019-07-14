@@ -489,18 +489,7 @@ class Module {
     if (this.forceCompile.value()) {
       return true;
     }
-    /* if (this.deps.length == 1) {
-      let a = this.fileState.isModified([this.deps[0].path]);
-      if (a) {
-        let b = this.fileState.get(this.deps[0].path);
-        //console.log(b);
-      }
-    } */
-    let rs = this.fileState.isModified(this.deps.map(dep => dep.path));
-    /* if (this.deps.length > 4) {
-      let c = this.fileState.get(this.deps[4].path);
-    } */
-    return rs;
+    return this.fileState.isModified(this.deps.map(dep => dep.path));
   }
   getId() {
     return [this.factory, this.path, this.file].filter(d => d).join("/");

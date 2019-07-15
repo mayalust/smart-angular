@@ -140,7 +140,7 @@ function getConfig(source) {
     let obj = `export default function(){
       return {
         type : "router",
-        loaderpath : ${current.concat(d).join('","')},
+        loaderpath : "[${current.concat(d).join('","')}]",
         router : "/${name}${param}",
         ctrlname : "${name}"
       }

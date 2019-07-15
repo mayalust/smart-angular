@@ -287,6 +287,9 @@ class Module {
       async allControllers() {
         let files = await loadFiles(factory, ["controllers"]);
         this.entry = () => {
+          if (this.deps.length == 0) {
+            return;
+          }
           return this.deps.reduce((a, b) => {
             if (this.file == null || this.file == b.basename) {
               a[b.basename] = makeEntry({
@@ -351,6 +354,9 @@ class Module {
       async allServices() {
         let files = await loadFiles(factory, ["services"]);
         this.entry = () => {
+          if (this.deps.length == 0) {
+            return;
+          }
           return this.deps.reduce((a, b) => {
             if (this.file == null || this.file == b.basename) {
               a[b.basename] = makeEntry({

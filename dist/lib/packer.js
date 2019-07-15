@@ -59,16 +59,25 @@ class PackQueue {
           console.info(`---- 子任务 ( ${this.index} ) :{`);
           console.info(`------ 开始打包文件:[${module.getId()}]`);
           webpack(webpackConfig, e => {
-            module.getUpdatedAsset(asset => {
+            if (e == null) {
+              module.getUpdatedAsset(asset => {
+                console.info(
+                  `------ 结束打包文件:[${module.getId()}], 总共用时 : [${(new Date() -
+                      time) /
+                      1000}秒]`
+                );
+                console.info(`---- }`);
+                this.index++;
+                next(asset);
+              });
+            } else {
               console.info(
-                `------ 结束打包文件:[${module.getId()}], 总共用时 : [${(new Date() -
+                `------ 发生错误，结束打包文件:[${module.getId()}], 总共用时 : [${(new Date() -
                     time) /
                     1000}秒]`
               );
-              console.info(`---- }`);
-              this.index++;
-              next(asset);
-            });
+              next();
+            }
           });
         };
       if (module.isModified()) {

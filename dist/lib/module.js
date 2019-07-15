@@ -405,6 +405,9 @@ class Module {
       async allDirectives() {
         let files = await loadFiles(factory, ["directives"]);
         this.entry = () => {
+          if (this.deps.length == 0) {
+            return;
+          }
           return this.deps.reduce((a, b) => {
             if (this.file == null || this.file == b.basename) {
               a[b.basename] = makeEntry({

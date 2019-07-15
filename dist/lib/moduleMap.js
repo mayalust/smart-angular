@@ -7,6 +7,7 @@ function toUpper(str) {
 class MakeConfig {
   constructor(factory, path, file) {
     const OldDics = {
+        "config": "controller.config",
         "config.controller": "controller.config",
         "config.template": "template.config"
       },

@@ -8,7 +8,7 @@ const {
   eachProp
 } = require("ps-ultility"),
   Server = require("./lib/server.js"),
-  Command = require("./lib/Command.js");
+  Command = require("./lib/command.js");
 class smartAngular {
   constructor() {
     let config = {

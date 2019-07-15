@@ -288,12 +288,14 @@ class Module {
         let files = await loadFiles(factory, ["controllers"]);
         this.entry = () => {
           return this.deps.reduce((a, b) => {
-            a[b.basename] = makeEntry({
-              factory: factory,
-              path: "controllers",
-              file: b.basename,
-              smartangular: null
-            });
+            if (this.file == null || this.file == b.basename) {
+              a[b.basename] = makeEntry({
+                factory: factory,
+                path: "controllers",
+                file: b.basename,
+                smartangular: null
+              });
+            }
             return a;
           }, {});
         };
@@ -350,12 +352,14 @@ class Module {
         let files = await loadFiles(factory, ["services"]);
         this.entry = () => {
           return this.deps.reduce((a, b) => {
-            a[b.basename] = makeEntry({
-              factory: factory,
-              path: "services",
-              file: b.basename,
-              smartangular: null
-            });
+            if (this.file == null || this.file == b.basename) {
+              a[b.basename] = makeEntry({
+                factory: factory,
+                path: "services",
+                file: b.basename,
+                smartangular: null
+              });
+            }
             return a;
           }, {});
         };
@@ -402,12 +406,14 @@ class Module {
         let files = await loadFiles(factory, ["directives"]);
         this.entry = () => {
           return this.deps.reduce((a, b) => {
-            a[b.basename] = makeEntry({
-              factory: factory,
-              path: "directives",
-              file: b.basename,
-              smartangular: null
-            });
+            if (this.file == null || this.file == b.basename) {
+              a[b.basename] = makeEntry({
+                factory: factory,
+                path: "directives",
+                file: b.basename,
+                smartangular: null
+              });
+            }
             return a;
           }, {});
         };

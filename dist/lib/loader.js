@@ -60,7 +60,9 @@ class LoaderMake {
       `import { render } from ${genRequest.call(
         this,
         [pathLib.resolve(workPath, "./angular-loader.js")],
-        {},
+        {
+          id : Math.round(Math.random() * 10000000)
+        },
         false
       )}`,
       `var handlers = []`
@@ -82,26 +84,37 @@ class LoaderMake {
   }
   getBody() {
     return this.getDeps().then(deps => {
-      let rs = deps.map(({
+      let rs = deps.filter(({
+        basename,
+        ext
+      }) => {
+        if (this.file == null) {
+          return true;
+        }
+        return this.file == basename;
+      }).map(({
         path,
         ext
       }) => {
         if (this.path == "controller.config") {
-          return this.renderConfig(path)
+          return this.renderConfig(path);
         }
         if (this.path == "template") {
-          return this.renderTemplate(path)
+          return this.renderTemplate(path);
         }
         if (new RegExp("css|less|scss|sass").test(ext)) {
           return this.renderCss(path);
         }
+        /* if (this.file != null) {
+          return this.renderSingle(path);
+        } */
         return this.renderTxt(path);
       });
       return Promise.resolve(rs);
     });
   }
   getTail() {
-    return [`var renderAll = render(handlers, true)`];
+    return this.file == null ? [`var renderAll = render(handlers, true)`] : [`var renderAll = handlers[0]`];
   }
   getEnd() {
     return [
@@ -111,7 +124,12 @@ class LoaderMake {
     ];
   }
   renderTemplate(path) {
-    return `require(${genRequest.call( this, [ pathLib.resolve(workPath, './template-extractor.js'), path ], null, true)})`;
+    return `require(${genRequest.call(
+      this,
+      [pathLib.resolve(workPath, "./template-extractor.js"), path],
+      null,
+      true
+    )})`;
   }
   renderTxt(path) {
     return `handlers.push(require(${genRequest.call(
@@ -122,13 +140,16 @@ class LoaderMake {
     )}).default)`;
   }
   renderConfig(path) {
+    let arr = path.split("/"),
+      last = arr.pop(),
+      paths = last.split(".");
     return `handlers.push(require(${genRequest.call(
       this,
-      [pathLib.resolve(workPath, "./ctrl-template-extractor.js"),path],
+      [pathLib.resolve(workPath, "./ctrl-template-extractor.js"), path],
       {
-        factory : this.factory,
-        path : this.path,
-        file : this.file
+        factory: this.factory,
+        path: paths[1],
+        file: paths[0]
       },
       true
     )}).default)`;

@@ -134,12 +134,15 @@ function getConfig(source) {
     configBlock = selectBlock(source, "config"),
     config = configBlock.attributes,
     param = makeParam(config.params || config.param || ""),
-    makeDeps = new MakeDeps(query.factory, source);
+    makeDeps = new MakeDeps(query.factory, source),
+    current = [`./${query.factory}/build/${query.path}/${query.file}.js|css`];
   makeDeps.init(d => {
     let obj = `export default function(){
       return {
         type : "router",
-        loaderpath : ${d.length > 0 ? `["${d.join('","')}"]` : "[]"},
+        loaderpath : ${
+          d.length > 0 ? `["${current.concat(d).join('","')}"]` : "[]"
+        },
         router : "/${name}${param}",
         ctrlname : "${name}"
       }

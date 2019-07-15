@@ -91,10 +91,11 @@ const render = function (handlers, inConfig) {
                   psrequire(deps, function () {
                     let args = [].slice.call(arguments),
                       endTime = (new Date() - time) / 1000,
-                      first = args.shift(),
-                      {
-                        template
-                      } = first(registerService);
+                      first = args.shift();
+                    console.log(first);
+                    let {
+                      template
+                    } = first(registerService);
                     console.log(endTime.toFixed(2) + "s is spent on importing new controllers and dependencies.")
                     setTemplate(template);
                     for (var i in args) {

@@ -92,7 +92,6 @@ const render = function (handlers, inConfig) {
                     let args = [].slice.call(arguments),
                       endTime = (new Date() - time) / 1000,
                       first = args.shift();
-                    console.log(first);
                     let {
                       template
                     } = first(registerService);

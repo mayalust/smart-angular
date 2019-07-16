@@ -277,7 +277,7 @@ class Module {
           path: "template",
           smartangular: null
         });
-        this.output = new Output(factory, "template.js");
+        this.output = new Output(factory, "template.config.js");
         this.modules = new WebpackModule();
         this.plugins = [
           new angularLoaderPlugin()

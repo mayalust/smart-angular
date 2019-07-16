@@ -20,7 +20,8 @@ class smartAngular {
   server(app, factory) {
     this.ser.start(app, factory);
   }
-  pack(str) {
+  pack(str, mode) {
+    this.command.setMode(mode)
     this.command.pack(str);
   }
 }
@@ -29,7 +30,7 @@ module.exports = {
   server(app, factory) {
     sangular.server(app, factory);
   },
-  pack(str) {
-    sangular.pack(str);
+  pack(str, mode) {
+    sangular.pack(str, mode);
   }
 };

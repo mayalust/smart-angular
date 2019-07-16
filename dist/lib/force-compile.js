@@ -1,6 +1,7 @@
 class ForceCompile {
   constructor() {
-    this.forceCompile = false
+    this.forceCompile = false;
+    this.developMode = "development";
   }
   turnOn() {
     this.forceCompile = true;
@@ -10,6 +11,12 @@ class ForceCompile {
   }
   value() {
     return this.forceCompile;
+  }
+  setMode(mode) {
+    this.developMode = mode;
+  }
+  getDevelopMode() {
+    return this.developMode;
   }
 }
 

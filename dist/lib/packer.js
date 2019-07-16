@@ -1,4 +1,5 @@
 const Module = require("./module"),
+  forceCompile = require("./force-compile"),
   webpack = require("webpack");
 
 function runItem(obj) {
@@ -13,11 +14,11 @@ function runItem(obj) {
 }
 class PackQueue {
   constructor(queue, callback) {
-    this.mode = "development";
     this.devtool = "source-map";
     this.queue = queue;
     this.index = 1;
     this.callback = callback;
+    this.forceCompile = forceCompile();
   }
   renderQueue(callback) {
     console.info(
@@ -44,7 +45,7 @@ class PackQueue {
           webpackConfig = {
             entry,
             output,
-            mode: this.mode,
+            mode: this.forceCompile.getDevelopMode(),
             devtool: this.devtool,
             module: modules,
             optimization,

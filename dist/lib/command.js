@@ -22,7 +22,10 @@ class Command {
       file: arr[2]
     };
   }
-  pack(str, callback) {
+  setMode(mode = "development") {
+    this.forceCompile.setMode(mode);
+  }
+  pack(str, callback, mode) {
     if (typeof str !== "string") {
       throw new Error("invalid input!!");
     }

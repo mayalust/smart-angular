@@ -549,6 +549,7 @@ class Module {
       callback(asset);
     }).catch(e => {
       this.assets.add(id, asset);
+      console.error(e);
       console.info(`-------- [错误(模块)] 找不到对应文件，或文件加载错误,跳过从[${id}]读取信息`);
       callback(asset);
     })

@@ -59,7 +59,7 @@ function getWorkPath(path) {
   return match[1];
 }
 
-function loadFiles(factory, arr) {
+function loadFiles(factory, arr, file) {
   let tester = {
     controllers(ext) {
       return ext == "controller";
@@ -102,7 +102,11 @@ function loadFiles(factory, arr) {
       let f = pathLib.join(_filePath, `./${factory}/${item}`);
       psFile(f)
         .children(n => {
-          return !n.isDir && check(n.ext) && noExclude(n.path);
+          if (file == null) {
+            return !n.isDir && check(n.ext) && noExclude(n.path);
+          } else {
+            return n.basename == file;
+          }
         })
         .then(d => {
           gen.next(d);
@@ -285,7 +289,7 @@ class Module {
         return await loadFiles(factory, ["templates"]);
       },
       async allControllers() {
-        let files = await loadFiles(factory, ["controllers"]);
+        let files = await loadFiles(factory, ["controllers"], this.file);
         this.entry = () => {
           if (this.deps.length == 0) {
             return;
@@ -352,7 +356,7 @@ class Module {
         );
       },
       async allServices() {
-        let files = await loadFiles(factory, ["services"]);
+        let files = await loadFiles(factory, ["services"], this.file);
         this.entry = () => {
           if (this.deps.length == 0) {
             return;
@@ -409,7 +413,7 @@ class Module {
         );
       },
       async allDirectives() {
-        let files = await loadFiles(factory, ["directives"]);
+        let files = await loadFiles(factory, ["directives"], this.file);
         this.entry = () => {
           if (this.deps.length == 0) {
             return;
@@ -504,7 +508,13 @@ class Module {
     if (this.forceCompile.value()) {
       return true;
     }
-    return this.fileState.isModified(this.deps.map(dep => dep.path));
+    if (this.file == null) {
+      return this.fileState.isModified(this.deps.map(dep => dep.path));
+    }
+    let deps = this.deps.filter(dep => {
+      return dep.basename == this.file;
+    })
+    return this.fileState.isModified(deps.map(dep => dep.path));
   }
   getId() {
     return [this.factory, this.path, this.file].filter(d => d).join("/");

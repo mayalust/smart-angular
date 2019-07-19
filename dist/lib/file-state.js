@@ -48,6 +48,9 @@ class State {
   }
   setModifyTime(modifyTime) {
     this.oldModifyTime = this.modifyTime;
+    if (this.file.basename == "ppp") {
+      console.log(modifyTime);
+    }
     this.modifyTime = modifyTime;
   }
 }

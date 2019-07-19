@@ -102,11 +102,10 @@ function loadFiles(factory, arr, file) {
       let f = pathLib.join(_filePath, `./${factory}/${item}`);
       psFile(f)
         .children(n => {
-          if (file == null) {
-            return !n.isDir && check(n.ext) && noExclude(n.path);
-          } else {
-            return n.basename == file;
+          if (n.isDir || !check(n.ext) || !noExclude(n.path)) {
+            return false;
           }
+          return file == null || file == n.basename;
         })
         .then(d => {
           gen.next(d);

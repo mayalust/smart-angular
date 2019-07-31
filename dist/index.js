@@ -10,10 +10,9 @@ const {
   Server = require("./lib/server.js"),
   Command = require("./lib/command.js");
 class smartAngular {
-  constructor() {
-    let config = {
-      "prefix": "ps"
-    }
+  constructor(config = {
+    "prefix": "ps"
+  }) {
     this.ser = new Server(config);
     this.command = new Command(config);
   }

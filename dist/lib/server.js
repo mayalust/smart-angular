@@ -77,7 +77,7 @@ class Explainer {
     this.add(`\\/build\\/directive\\.(js|css)$`, (match, callback) => {
       this.moduleMap.init(this.factory, "directive").then(moduleList => {
         this.packer.pack(moduleList, asset => {
-          callback && callback.call(this, asset[0][match[1]]);
+          callback && callback.call(this, [match[1], asset[0][match[1]]]);
         });
       });
     });
@@ -136,9 +136,9 @@ class Explainer {
 }
 
 class Server {
-  constructor(config) {
-    this.prefix = config ? config.prefix : "ps";
-    this.explainer = new Explainer();
+  constructor(config = {}) {
+    this.prefix = config.prefix || "ps";
+    this.explainer = new Explainer(config.includeConfig);
     this.moduleMap = createModuleMap();
   }
   getFactory(factory) {

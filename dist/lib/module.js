@@ -538,6 +538,8 @@ class Module {
         arr.push(this.path.substring(0, this.path.length - 1));
       } else if (["allControllers", "allDirectives", "allServices"].indexOf(this.path) != -1) {
         arr.push(this.path.substring(3, this.path.length - 1).toLowerCase());
+      } else if (this.path == "template") {
+        arr.push("template.config");
       } else {
         arr.push(this.path);
       }

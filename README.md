@@ -2,8 +2,7 @@
 angularjs version 1.x template
 smart-angular是一套基于angularjsv1.x的打包部署工具，主要作用是可以使用类似.vue文件的写法写.controller,.service,.directive文件还有css文件，支持包括less, scss，sass, css的打包和部署工作。
 
-
-1.安装
+**1.安装**
 全局安装 npm i smart-angular@latest -g，通常用于部署打包阶段打包文件。（部署阶段使用）
 局部安装 npm i smart-angular@latest 通常用于开发阶段和本地调试。（推荐安装调试使用局部安装）
 c)   注意：局部安装之后需要手动在package.json的script下添加smart-angular : “smart-angular”属性，后面可通过npm run smart-angular 加方法来进行调用

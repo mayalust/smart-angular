@@ -28,8 +28,8 @@ class PackQueue {
       runWebpack;
     this.time = new Date();
     this.callbacks = [];
-    (this.generator = runWebpackList(this.queue)),
-    (runWebpack = module => {
+    this.generator = runWebpackList(this.queue);
+    runWebpack = module => {
       let next = asset => {
           setTimeout(() => this.generator.next(asset));
         },
@@ -95,7 +95,7 @@ class PackQueue {
         }
         return next(asset);
       });
-    });
+    };
     this.generator.next();
 
     function* runWebpackList(list) {

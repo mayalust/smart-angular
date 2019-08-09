@@ -135,7 +135,7 @@ function getConfig(source) {
     config = configBlock.attributes,
     param = makeParam(config.params || config.param || ""),
     makeDeps = new MakeDeps(query.factory, source),
-    current = [pathLib.resolve(`./${query.path}/${query.file}.js|css`)];
+    current = [`/${query.path}/${query.file}.js|css`];
   makeDeps.init(d => {
     let obj = `export default function(){
       return {

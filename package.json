@@ -1,6 +1,6 @@
 {
   "name": "smart-angular",
-  "version": "1.6.27",
+  "version": "1.6.28",
   "description": "proudsmart smart-angular",
   "main": "./dist/index.js",
   "repository": {

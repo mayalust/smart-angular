@@ -140,7 +140,7 @@ class LoaderMake {
     )}).default)`;
   }
   renderConfig(path) {
-    let arr = path.split("/"),
+    let arr = path.split(new RegExp("[\\\/]")),
       last = arr.pop(),
       paths = last.split(".");
     return `handlers.push(require(${genRequest.call(
